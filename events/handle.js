@@ -221,8 +221,10 @@ class EventHandlers {
 			const idx = await this.#getRowByAgentName(agentName);
 			const value = { agentName, agentFaction, level, lifetimeAP, xmRecharged, id: user_info.id };
 			const res = idx === -1 ? await this.#buildNewEntry(value) : await this.#updateEntry(idx, value);
-			if (res && idx === -1) this.#userMap.set(user_info.id, agentName);
-			if (res) return { agentName, agentFaction };
+			if (res && idx === -1) {
+				this.#userMap.set(user_info.id, agentName);
+				return { agentName, agentFaction };
+			}
 			return res;
 		} catch (e) {
 			console.error(e);

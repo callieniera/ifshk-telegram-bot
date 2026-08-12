@@ -28,8 +28,14 @@ class TelegramMessagesHandlers {
 					else this.#instances.telegram.methods.sendMessage(chat_info.id, text, opt);
 					return;
 				}
-				if (serviceMsg.ok) this.#instances.telegram.methods.deleteMessage(chat_info.id, serviceMsg.result.message_id);
-				await this.#instances.telegram.utils.sendCheckinQRCode(user_info, submitRes.agnetName, evtObj.id, opt);
+				if (typeof submitRes === "object") {
+					if (serviceMsg.ok) this.#instances.telegram.methods.deleteMessage(chat_info.id, serviceMsg.result.message_id);
+					await this.#instances.telegram.utils.sendCheckinQRCode(user_info, submitRes.agnetName, evtObj.id, opt);
+				} else {
+					if (serviceMsg.ok)
+						await this.#instances.telegram.methods.editMessageText(chat_info.id, serviceMsg.result.message_id, "<b>✅ Submitted end stat!</b>", opt);
+					else await this.#instances.telegram.methods.sendMessage(chat_info.id, "<b>✅ Submitted end stat!</b>", opt);
+				}
 				return;
 			} else if (events.length > 1) {
 				const inline_keyboard = [];
