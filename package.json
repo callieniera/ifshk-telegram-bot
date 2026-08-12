@@ -1,0 +1,21 @@
+{
+  "name": "ifshk-telegram-bot",
+  "version": "0.0.1",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "module",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "canvas": "^3.2.3",
+    "cheerio": "^1.2.0",
+    "dotenv": "^17.4.2",
+    "fastify": "^5.9.0",
+    "jsdom": "^30.0.1",
+    "qr-code-styling": "^1.9.2"
+  },
+  "devDependencies": {}
+}
