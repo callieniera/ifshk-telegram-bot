@@ -1,5 +1,6 @@
 import TelegramCommandHandlers from "./command.js";
 import TelegramCallbackqueryHandlers from "./callbackquery.js";
+import TelegramMessagesHandlers from "./messages.js";
 
 class RepeatCheck {
 	#storage = new Map();
@@ -24,6 +25,7 @@ class TelegramHandlers {
 		this.#instances = instances;
 		this.#CommandHandlers = new TelegramCommandHandlers(this.#instances);
 		this.#CallbackqueryHandlers = new TelegramCallbackqueryHandlers(this.#instances);
+		this.#MessageHandlers = new TelegramMessagesHandlers(this.#instances);
 		return;
 	}
 	#instances;
@@ -94,12 +96,34 @@ class TelegramHandlers {
 			case false:
 				result = await cq(chat_info, user_info, callback_info, json);
 		}
-		if (!result)
+		if (result === false)
 			return {
 				method: "answerCallbackQuery",
 				callback_query_id: json.callback_query.id,
 			};
+		else if (result === null) return false;
 		return result;
+	}
+
+	#MessageHandlers;
+	async message(json) {
+		const chat_info = {
+			...json.message.chat,
+		};
+		if (json.message.is_topic_message) chat_info.message_thread_id = json.message.message_thread_id;
+		const user_info = {
+			...json.message.from,
+		};
+		const message_info = {
+			message_id: json.message.message_id,
+			content: json.message.text,
+			reply_to_message: json.message.reply_to_message,
+			entities: json.message.entities,
+		};
+		if (repeatcheck.isRepeat(chat_info.id, message_info.message_id)) return false;
+		const messageType = this.#instances.telegram.utils.chatTextType(message_info.content);
+		if (typeof this.#MessageHandlers[messageType] === "function") return await this.#MessageHandlers[messageType](chat_info, user_info, message_info);
+		return false;
 	}
 
 	default() {

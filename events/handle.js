@@ -207,7 +207,7 @@ class EventHandlers {
 				return `Missing or empty field: ${key}`;
 			}
 		}
-
+		if (this.#opt.isTest && !this.#opt.sheetID) return true;
 		const agentName = String(values["AgentName"]);
 		const agentFaction = String(values["AgentFaction"]);
 		const dateStr = String(values["Date(yyyy-mm-dd)"]);
@@ -215,7 +215,6 @@ class EventHandlers {
 		const level = Number(values["Level"]);
 		const lifetimeAP = Number(values["LifetimeAP"]);
 		const xmRecharged = Number(values["XMRecharged"]);
-
 		const release = await this.handleQueue();
 		try {
 			await this.initSync();
@@ -223,6 +222,7 @@ class EventHandlers {
 			const value = { agentName, agentFaction, level, lifetimeAP, xmRecharged, id: user_info.id };
 			const res = idx === -1 ? await this.#buildNewEntry(value) : await this.#updateEntry(idx, value);
 			if (res && idx === -1) this.#userMap.set(user_info.id, agentName);
+			if (res) return { agentName, agentFaction };
 			return res;
 		} catch (e) {
 			console.error(e);

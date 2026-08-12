@@ -27,6 +27,13 @@ class TelegramUtils {
 		return json;
 	}
 
+	chatTextType(string) {
+		const matches = String(string).match(/\r?\n/g);
+		if (matches && matches.length === 1 && string.indexOf("Time Span") === 0) return "stat"
+		
+		return "other"
+	}
+
 	#sentCheckinQrCode = new Map();
 
 	async sendCheckinQRCode(user_info, agentName, id, opt) {

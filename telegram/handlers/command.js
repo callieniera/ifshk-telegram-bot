@@ -75,7 +75,6 @@ class TelegramCommandHandlers {
 	async test(chat_info, user_info, message_info) {
 		if (chat_info.id !== user_info.id) return;
 		const eventOpt = {
-			eventID: 1,
 			isTest: {
 				username: user_info.username,
 			},
@@ -91,13 +90,6 @@ class TelegramCommandHandlers {
 				const eventObj = this.#instances.events.createNewEvent(eventOpt);
 				await eventObj.initSync();
 				const details = eventObj.details;
-				if (!details) throw new ReferenceError("Unable to retrieve event data.");
-				if (Date.now() > details.restockTime.getTime()) throw new RangeError("Event ended.");
-				const normalizedUserName = String(user_info.username).toLocaleLowerCase();
-				if (details.leaderEnl.username !== normalizedUserName && details.leaderRes.username !== normalizedUserName) {
-					if (!eventObj.sheetID) this.#instances.events.destroyEvent(1);
-					return;
-				}
 				const match = details.timezone.match(/([+-])(\d+)/);
 				const formattedOffset = match ? `${match[1]}${match[2].padStart(2, "0")}:00` : "+00:00";
 				const fromTime = Temporal.Instant.fromEpochMilliseconds(details.passcodeStartTime.getTime());
@@ -107,7 +99,7 @@ class TelegramCommandHandlers {
 				const zonedTill = tillTime.toZonedDateTimeISO(formattedOffset);
 				const zonedBroadcast = broadcastTime.toZonedDateTimeISO(formattedOffset);
 				const text = [
-					`IFS Event added: <i>${details.title}</i>`,
+					`IFS Event added: <i>${details.title} (${eventObj.id})</i>`,
 					"",
 					`Timezone: <b>${details.timezone}</b>`,
 					`Accept stat from <b>${new Intl.DateTimeFormat("en-HK", {
