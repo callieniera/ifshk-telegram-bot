@@ -10,6 +10,13 @@ class TelegramCallbackqueryHandlers {
 	#cachedQuery = new Set();
 	stat(chat_info, user_info, callback_info) {
 		setImmediate(async () => {
+			if (
+				callback_info.message_info.reply_to_message?.message_id === undefined ||
+				String(callback_info.message_info.reply_to_message?.text || "").length === 0
+			) {
+				await this.#instances.telegram.methods.editMessageText(chat_info.id, `<i>Error: What are you submitting?</i>`, opt);
+				return;
+			}
 			const opt = {
 				reply_parameters: {
 					message_id: callback_info.message_info.reply_to_message.message_id,
@@ -38,6 +45,18 @@ class TelegramCallbackqueryHandlers {
 			if (serviceMsg.ok) this.#instances.telegram.methods.deleteMessage(chat_info.id, serviceMsg.result.message_id);
 			await this.#instances.telegram.utils.sendCheckinQRCode(user_info, submitRes.agnetName, evtObj.id, opt);
 			return;
+		});
+		return false;
+	}
+
+	close(chat_info, _, callback_info) {
+		setImmediate(async () => {
+			try {
+				await this.#instances.telegram.methods.deleteMessages(
+					chat_info.id,
+					[callback_info.message_info.message_id, callback_info.message_info.reply_to_message?.message_id].filter(Boolean)
+				);
+			} catch {}
 		});
 		return false;
 	}
