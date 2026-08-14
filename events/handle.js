@@ -10,6 +10,7 @@ class EventHandlers {
 			}
 		}
 		if (opt.details) this.details = opt.details;
+		if (opt.users) this.users = opt.users;
 		this.#initOnStart();
 	}
 	#instances;
@@ -23,7 +24,7 @@ class EventHandlers {
 	#inited = [];
 
 	async #initOnStart() {
-		if (this.#opt.isTest) {
+		if (this.#opt.isTest && !this.#details) {
 			const now = new Date();
 			this.#details = {
 				eventDateTime: now,
@@ -57,6 +58,9 @@ class EventHandlers {
 
 	set details(data) {
 		this.#details = data;
+		["eventDateTime", "passcodeStartTime", "mediaEndTime", "restockTime", "restockEndTime", "passcodeEndTime"].forEach((key) => {
+			this.#details[key] = new Date(this.#details[key]);
+		});
 		return;
 	}
 
@@ -196,6 +200,10 @@ class EventHandlers {
 
 	#userMap = new Map();
 
+	set users(object) {
+		this.#userMap = new Map(Object.entries(object).map((v) => [Number(v[0]), v[1]]));
+	}
+
 	async submit(string, user_info) {
 		const { ok, values, error } = this.#stringParser(string);
 		if (!ok || error) return `Parse failed: ${error || "Unknown Error"}`;
@@ -223,6 +231,7 @@ class EventHandlers {
 			const res = idx === -1 ? await this.#buildNewEntry(value) : await this.#updateEntry(idx, value);
 			if (res && idx === -1) {
 				this.#userMap.set(user_info.id, agentName);
+				this.#instances.events.scheduleSave();
 				return { agentName, agentFaction };
 			}
 			return res;
@@ -414,6 +423,15 @@ class EventHandlers {
 			if (keysArray[i] === "DistanceWalked") break;
 		}
 		return { ok: true, values: values };
+	}
+
+	exportSaveData() {
+		const exportValue = {
+			...this.#opt,
+		};
+		exportValue.details = this.#details;
+		exportValue.users = Object.fromEntries(this.#userMap.entries());
+		return exportValue;
 	}
 }
 

@@ -64,7 +64,7 @@ class TelegramHandlers {
 	}
 
 	#CallbackqueryHandlers;
-	#allowNoValueCallback = [];
+	#allowNoValueCallback = ["close"];
 	async callback_query(json) {
 		const chat_info = {
 			...json.callback_query.message.chat,
