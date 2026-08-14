@@ -44,6 +44,7 @@ class TelegramHandlers {
 		const user_info = {
 			...json.message.from,
 		};
+		this.#instances.events?.noteLeaderSight(user_info);
 		const message_info = {
 			message_id: json.message.message_id,
 			content: json.message.text.slice(json.message.entities[0].length + 1),
@@ -73,6 +74,7 @@ class TelegramHandlers {
 		const user_info = {
 			...json.callback_query.from,
 		};
+		this.#instances.events?.noteLeaderSight(user_info);
 		const [command, value] = json.callback_query.data.split("_");
 
 		if (!value && this.#allowNoValueCallback.indexOf(command) === -1) return false;
@@ -114,6 +116,7 @@ class TelegramHandlers {
 		const user_info = {
 			...json.message.from,
 		};
+		this.#instances.events?.noteLeaderSight(user_info);
 		const message_info = {
 			message_id: json.message.message_id,
 			content: json.message.text,

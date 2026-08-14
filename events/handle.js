@@ -35,8 +35,8 @@ class EventHandlers {
 				restockTime: new Date(now.getTime() + 15 * 60 * 1000),
 				restockEndTime: new Date(now.getTime() + 30 * 60 * 1000),
 				passcodeEndTime: new Date(now.getTime() + 30 * 60 * 1000),
-				leaderEnl: { name: this.#opt.isTest.username, username: String(this.#opt.isTest.username).toLocaleLowerCase() },
-				leaderRes: { name: this.#opt.isTest.username, username: String(this.#opt.isTest.username).toLocaleLowerCase() },
+				leaderEnl: { name: this.#opt.isTest.username, username: String(this.#opt.isTest.username).toLocaleLowerCase(), id: null },
+				leaderRes: { name: this.#opt.isTest.username, username: String(this.#opt.isTest.username).toLocaleLowerCase(), id: null },
 				baseIntel: null,
 				baseGoogle: null,
 				restockIntel: null,
@@ -66,6 +66,18 @@ class EventHandlers {
 
 	get details() {
 		return structuredClone(this.#details);
+	}
+
+	setLeaderID(leaderKey, id) {
+		if (!["leaderEnl", "leaderRes"].includes(leaderKey)) return;
+		if (!this.#details || !this.#details[leaderKey]) return;
+		const leader = this.#details[leaderKey];
+		if (leader.id) return;
+		const numericID = Number(id);
+		if (isNaN(numericID)) return;
+		leader.id = numericID;
+		this.#instances.events?.scheduleSave();
+		return;
 	}
 
 	async #retrieveEventData() {
@@ -108,6 +120,7 @@ class EventHandlers {
 		const leaderEnl = {
 			name: leadersENLObj.text(),
 			username: leadersENLObj.attr("href").includes("t.me") ? leadersENLObj.attr("href").split("/").pop().toLocaleLowerCase() : null,
+			id: null,
 		};
 		const leadersRESObj = leaders.find("a.res");
 		const leaderRes = {
