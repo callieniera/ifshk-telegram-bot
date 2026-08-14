@@ -84,12 +84,13 @@ class EventApp {
 			eventObj.initSync().then(() => this.#scheduleDestroy(eventID, retry + 1));
 			return;
 		}
+		const now = Date.now();
 		const delayMs = Math.max(
 			0,
 			(eventObj.details.passcodeEndTime
-				? eventObj.details.passcodeEndTime
-				: new Date(Date.now() - ((Date.now() + 24 * 60 * 60 * 1000) % (24 * 60 * 60 * 1000)))
-			).getTime() - Date.now()
+				? new Date(eventObj.details.passcodeEndTime.getTime() + 2 * 60 * 60 * 1000)
+				: new Date(now - ((now + 24 * 60 * 60 * 1000) % (24 * 60 * 60 * 1000)))
+			).getTime() - now
 		);
 		if (delayMs === 0) {
 			void this.#destroyExpired(eventID);
@@ -142,7 +143,8 @@ class EventApp {
 		const now = new Date();
 		const events = [];
 		for (const eventObj of this.#events.values())
-			if (/*eventObj.sheetID && */ eventObj.details.passcodeStartTime < now && now < eventObj.details.passcodeEndTime) events.push(eventObj);
+			if (/*eventObj.sheetID && */ eventObj.details.passcodeStartTime < now && now < new Date(eventObj.details.passcodeEndTime.getTime() + 2 * 60 * 60 * 1000))
+				events.push(eventObj);
 		return events;
 	}
 	destroyEvent(eventID) {
