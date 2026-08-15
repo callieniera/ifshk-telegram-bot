@@ -92,7 +92,7 @@ class EventApp {
 		const delayMs = Math.max(
 			0,
 			(eventObj.details.passcodeEndTime
-				? new Date(eventObj.details.passcodeEndTime.getTime() + 2 * 60 * 60 * 1000)
+				? new Date(eventObj.details.passcodeEndTime.getTime() + (eventObj.isTest ? 15 * 60 * 1000 : 2 * 60 * 60 * 1000))
 				: new Date(now - ((now + 24 * 60 * 60 * 1000) % (24 * 60 * 60 * 1000)))
 			).getTime() - now
 		);
@@ -142,13 +142,13 @@ class EventApp {
 		this.#clearReminder(eventID);
 		const eventObj = this.#events.get(eventID);
 		if (!eventObj) return;
-		if (!eventObj.details?.passcodeEndTime && retry === 0) {
+		if (!eventObj.details?.restockTime && retry === 0) {
 			eventObj.initSync().then(() => this.#scheduleReminder(eventID, retry + 1));
 			return;
 		}
-		if (!eventObj.details.passcodeEndTime) return;
+		if (!eventObj.details.restockTime) return;
 		const now = Date.now();
-		const delayMs = new Date(eventObj.details.passcodeEndTime).getTime() - now;
+		const delayMs = new Date(eventObj.details.restockTime).getTime() - now;
 		if (delayMs < 0) return;
 		if (delayMs === 0) {
 			void this.#broadcastReminder(eventID);
@@ -187,6 +187,7 @@ class EventApp {
 		};
 		if (noEndStat.length) await sendTo(noEndStat, `<b>Reminder:</b> Please submit your end stat for <i>${title}</i>.`);
 		if (notMeeting.length) await sendTo(notMeeting, `<b>Reminder:</b> Your lifetime AP gain is below 10,000. Please re-submit your end stat.`);
+		await eventObj.broadcastPasscode();
 		return;
 	}
 
@@ -202,7 +203,11 @@ class EventApp {
 		const now = new Date();
 		const events = [];
 		for (const eventObj of this.#events.values())
-			if (eventObj.sheetID && eventObj.details.passcodeStartTime < now && now < new Date(eventObj.details.passcodeEndTime.getTime() + 2 * 60 * 60 * 1000))
+			if (
+				eventObj.sheetID &&
+				eventObj.details.passcodeStartTime < now &&
+				now < new Date(eventObj.details.passcodeEndTime.getTime() + (eventObj.isTest ? 15 * 60 * 1000 : 2 * 60 * 60 * 1000))
+			)
 				events.push(eventObj);
 		return events;
 	}

@@ -16,6 +16,7 @@ class EventHandlers {
 		if (opt.users) this.users = opt.users;
 		if (opt.qrcodes) this.#sentCheckinQrCode = new Map(Object.entries(opt.qrcodes));
 		if (opt.passcode) this.#passcode = opt.passcode;
+		if (opt.sentPasscode) this.#sentPasscode = new Map(Object.entries(opt.sentPasscode));
 		this.#initOnStart();
 	}
 	#instances;
@@ -25,6 +26,10 @@ class EventHandlers {
 		eventID: null,
 		isTest: false,
 	};
+
+	get isTest() {
+		return !!this.#opt.isTest;
+	}
 
 	#inited = [];
 
@@ -345,6 +350,7 @@ class EventHandlers {
 		} else return "Lifetime AP hasn't been updated since the last submission.";
 		try {
 			await updateRange(token, this.#opt.sheetID, `'Data'!A${idx}:O${idx}`, [newValue]);
+			void this.#maybeSendPasscode(values, newValue);
 			return true;
 		} catch (err) {
 			console.error(err);
@@ -445,24 +451,27 @@ class EventHandlers {
 
 	#sentCheckinQrCode = new Map();
 
+	#sentPasscode = new Map();
+
 	getSentCheckinQrCode(agentName) {
 		return this.#sentCheckinQrCode.get(agentName) || null;
 	}
 
 	sentCheckinQrCodeDeleted(agentName) {
 		this.#sentCheckinQrCode.delete(agentName);
-		this.scheduleSave();
+		this.#instances.events?.scheduleSave();
 		return;
 	}
 
 	async sendCheckinQRCode(user_info, { agentName, agentFaction }, opt) {
 		try {
+			const faction = String(agentFaction || "unknown").toLocaleLowerCase();
 			const options = {
 				width: 1080,
 				height: 1080,
 				data: `https://t.me/${process.env.TG_BOT_USERNAME}?start=checkin-${this.#opt.eventID}-${agentName}`,
 				dotsOptions: {
-					color: "#7f58ae",
+					color: faction.includes("enl") ? "#19c37d" : faction.includes("res") ? "#0b5a7a" : "#ffffff",
 					type: "extra-rounded",
 				},
 				backgroundOptions: {
@@ -491,14 +500,14 @@ class EventHandlers {
 			const tg_res = await this.#instances.telegram.methods.sendPhotoFile(user_info.id, await file, "qrcode.png", message_options);
 			if (tg_res.ok) {
 				this.#sentCheckinQrCode.set(agentName, { id: user_info.id, message_id: tg_res.result.message_id });
-				this.scheduleSave();
+				this.#instances.events?.scheduleSave();
 			}
 		} catch (err) {
 			console.error(err);
 			const tg_res = await this.#instances.telegram.methods.sendMessage(user_info.id, "<i>Error: Unable to generate QR Code for check-in.</i>", opt);
 			if (tg_res.ok) {
 				this.#sentCheckinQrCode.set(agentName, { id: user_info.id, message_id: tg_res.result.message_id });
-				this.scheduleSave();
+				this.#instances.events?.scheduleSave();
 			}
 		}
 	}
@@ -550,6 +559,76 @@ class EventHandlers {
 		return { noEndStat, notMeeting };
 	}
 
+	#rowQualifiesForPasscode(row) {
+		// Column C (idx 2) must be a numeric id
+		const id = Number(row[2]);
+		if (!id || Number.isNaN(id)) return false;
+		// Column A (idx 0) must be TRUE (participated)
+		const a = row[0];
+		if (a !== "TRUE" && a !== "true" && a !== true) return false;
+		// Column H (idx 7) and Column K (idx 10) must not be blank
+		const h = row[7];
+		const k = row[10];
+		if (h === "" || h == null || k === "" || k == null || Number.isNaN(Number(k))) return false;
+		// Column K - Column J (idx 9) must be >= 10000
+		const j = Number(row[9]);
+		return Number(k) - j >= 10000;
+	}
+
+	async getPasscodeRecipients() {
+		await this.initSync();
+		const recipients = [];
+		if (!this.#opt.sheetID) return recipients;
+		const token = await this.#instances.google.getServiceAccountToken();
+		const rows = await getRange(token, this.#opt.sheetID, "'Data'!A:O");
+		rows.splice(0, 1);
+		const seen = new Set();
+		for (const row of rows) {
+			if (!this.#rowQualifiesForPasscode(row)) continue;
+			const agentName = String(row[4]).toLocaleLowerCase();
+			if (seen.has(agentName)) continue;
+			seen.add(agentName);
+			recipients.push({ id: Number(row[2]), agentName: row[4] });
+		}
+		return recipients;
+	}
+
+	async #sendPasscode(recipient) {
+		if (typeof this.#passcode !== "string" || !this.#passcode.length) return;
+		const key = String(recipient.agentName).toLocaleLowerCase();
+		if (this.#sentPasscode.has(key)) return;
+		try {
+			const res = await this.#instances.telegram?.methods?.sendMessage(recipient.id, `<code>${this.#passcode}</code>`);
+			if (res?.ok) {
+				this.#sentPasscode.set(key, true);
+				this.#instances.events?.scheduleSave();
+			}
+		} catch (e) {
+			console.error(e);
+		}
+	}
+
+	async broadcastPasscode() {
+		if (typeof this.#passcode !== "string" || !this.#passcode.length) return;
+		const recipients = await this.getPasscodeRecipients();
+		for (const recipient of recipients) await this.#sendPasscode(recipient);
+		return;
+	}
+
+	async #maybeSendPasscode(values, row) {
+		try {
+			const end = this.#details?.passcodeEndTime;
+			if (!end) return;
+			// Only after the passcode window has opened (event ended but not yet destroyed).
+			if (Date.now() < new Date(end).getTime()) return;
+			if (typeof this.#passcode !== "string" || !this.#passcode.length) return;
+			if (!this.#rowQualifiesForPasscode(row)) return;
+			void this.#sendPasscode({ id: values.id, agentName: values.agentName });
+		} catch (e) {
+			console.error(e);
+		}
+	}
+
 	exportSaveData() {
 		const exportValue = {
 			...this.#opt,
@@ -558,6 +637,7 @@ class EventHandlers {
 		exportValue.users = Object.fromEntries(this.#userMap.entries());
 		exportValue.qrcodes = Object.fromEntries(this.#sentCheckinQrCode.entries());
 		exportValue.passcode = this.#passcode;
+		exportValue.sentPasscode = Object.fromEntries(this.#sentPasscode.entries());
 		return exportValue;
 	}
 }

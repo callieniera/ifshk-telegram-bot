@@ -88,8 +88,8 @@ class TelegramCommandHandlers {
 				const match = details.timezone.match(/([+-])(\d+)/);
 				const formattedOffset = match ? `${match[1]}${match[2].padStart(2, "0")}:00` : "+00:00";
 				const fromTime = Temporal.Instant.fromEpochMilliseconds(details.passcodeStartTime.getTime());
-				const tillTime = Temporal.Instant.fromEpochMilliseconds(details.restockTime.getTime());
-				const broadcastTime = Temporal.Instant.fromEpochMilliseconds(details.passcodeEndTime.getTime());
+				const tillTime = Temporal.Instant.fromEpochMilliseconds(details.passcodeEndTime.getTime() + (eventObj.isTest ? 15 * 60 * 1000 : 2 * 60 * 60 * 1000));
+				const broadcastTime = Temporal.Instant.fromEpochMilliseconds(details.restockTime.getTime());
 				const zonedFrom = fromTime.toZonedDateTimeISO(formattedOffset);
 				const zonedTill = tillTime.toZonedDateTimeISO(formattedOffset);
 				const zonedBroadcast = broadcastTime.toZonedDateTimeISO(formattedOffset);
@@ -142,8 +142,8 @@ class TelegramCommandHandlers {
 				const match = details.timezone.match(/([+-])(\d+)/);
 				const formattedOffset = match ? `${match[1]}${match[2].padStart(2, "0")}:00` : "+00:00";
 				const fromTime = Temporal.Instant.fromEpochMilliseconds(details.passcodeStartTime.getTime());
-				const tillTime = Temporal.Instant.fromEpochMilliseconds(details.restockTime.getTime());
-				const broadcastTime = Temporal.Instant.fromEpochMilliseconds(details.passcodeEndTime.getTime());
+				const tillTime = Temporal.Instant.fromEpochMilliseconds(details.passcodeEndTime.getTime() + (eventObj.isTest ? 15 * 60 * 1000 : 2 * 60 * 60 * 1000));
+				const broadcastTime = Temporal.Instant.fromEpochMilliseconds(details.restockTime.getTime());
 				const zonedFrom = fromTime.toZonedDateTimeISO(formattedOffset);
 				const zonedTill = tillTime.toZonedDateTimeISO(formattedOffset);
 				const zonedBroadcast = broadcastTime.toZonedDateTimeISO(formattedOffset);
