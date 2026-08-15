@@ -148,6 +148,11 @@ class EventApp {
 				events.push(eventObj);
 		return events;
 	}
+
+	getEvent(eventID) {
+		return this.#events.get(Number(eventID)) || null;
+	}
+
 	destroyEvent(eventID) {
 		this.#clearDestroy(eventID);
 		if (this.#events.has(eventID)) {

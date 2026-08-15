@@ -6,7 +6,52 @@ class TelegramCommandHandlers {
 	#instances;
 
 	start(chat_info, user_info, message_info) {
-		return false;
+		if (chat_info.id !== user_info.id) return false;
+		const content = String(message_info.content || "");
+		if (!content.length) return false;
+		const [command, value] = content.split("-");
+		switch (command) {
+			case "checkin": {
+				if (!value) return false;
+				const match = value.match(/^(\d+)-(.+)$/);
+				if (!match) return false;
+				const eventID = Number(match[1]);
+				const agentName = decodeURIComponent(match[2]);
+				const opt = {
+					reply_parameters: {
+						message_id: message_info.message_id,
+						allow_sending_without_reply: true,
+					},
+				};
+				setImmediate(async () => {
+					try {
+						const evtObj = this.#instances.events.getEvent(eventID);
+						if (!evtObj) {
+							await this.#instances.telegram.methods.sendMessage(chat_info.id, "<i>Error: Event not found.</i>", opt);
+							return;
+						}
+						const res = await evtObj.markParticipated(agentName);
+						if (res === "Agent not found!" || res === false) {
+							await this.#instances.telegram.methods.sendMessage(
+								chat_info.id,
+								`<i>${res === "Agent not found!" ? "Agent not found!" : "Failed to mark as participated."}</i>`,
+								opt
+							);
+							return;
+						}
+						const sent = this.#instances.telegram.utils.getSentCheckinQrCode(agentName);
+						if (sent && sent.id === user_info.id) this.#instances.telegram.methods.deleteMessage(sent.id, sent.message_id);
+						this.#instances.telegram.methods.sendMessage(chat_info.id, "<b>✅ Checked in!</b>", opt);
+						this.#instances.telegram.methods.sendMessage(sent.id, "<b>✅ You are checked in!</b>");
+					} catch (err) {
+						if (err && err.message) this.#instances.telegram.methods.sendMessage(chat_info.id, `<i>${err.toString()}</i>`, opt);
+					}
+				});
+			}
+			default: {
+				return false;
+			}
+		}
 	}
 
 	async new(chat_info, user_info, message_info) {

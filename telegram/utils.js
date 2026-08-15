@@ -36,6 +36,10 @@ class TelegramUtils {
 
 	#sentCheckinQrCode = new Map();
 
+	getSentCheckinQrCode(agentName) {
+		return this.#sentCheckinQrCode.get(agentName) || null;
+	}
+
 	async sendCheckinQRCode(user_info, agentName, id, opt) {
 		try {
 			const options = {
