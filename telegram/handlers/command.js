@@ -174,6 +174,49 @@ class TelegramCommandHandlers {
 		});
 		return false;
 	}
+
+	passcode(chat_info, user_info, message_info) {
+		if (chat_info.id !== user_info.id) return false;
+		const content = String(message_info.content || "");
+		if (!content.length) return false;
+		const opt = {
+			reply_parameters: {
+				message_id: message_info.message_id,
+				allow_sending_without_reply: true,
+			},
+		};
+		setImmediate(async () => {
+			try {
+				const now = new Date();
+				const events = this.#instances.events
+					.getLeaderEvents(user_info.username)
+					.filter(
+						(evtObj) =>
+							evtObj.details.passcodeStartTime &&
+							evtObj.details.passcodeEndTime &&
+							evtObj.details.passcodeStartTime < now &&
+							now < evtObj.details.passcodeEndTime
+					);
+				if (!events.length) return;
+				else if (events.length === 1) {
+					const evtObj = events[0];
+					evtObj.passcode = content;
+					this.#instances.telegram.methods.sendMessage(chat_info.id, `<b>✅ Passcode set</b>: <code>${content}</code>`, opt);
+					return;
+				} else if (events.length > 1) {
+					const inline_keyboard = [];
+					for (const evtObj of events) inline_keyboard.push([{ text: evtObj.details.title, callback_data: `passcode_${evtObj.id}` }]);
+					inline_keyboard.push([{ text: "Cancel", style: "danger", callback_data: "close" }]);
+					opt.reply_markup = { inline_keyboard };
+					await this.#instances.telegram.methods.sendMessage(chat_info.id, `<b>Please choose an event:</b>`, opt);
+					return;
+				}
+			} catch (err) {
+				console.error(err);
+			}
+		});
+		return false;
+	}
 }
 
 export default TelegramCommandHandlers;

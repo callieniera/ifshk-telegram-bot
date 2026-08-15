@@ -17,6 +17,8 @@ class EventApp {
 
 	#timers = new Map();
 
+	#reminderTimers = new Map();
+
 	#inited = [];
 
 	async #initOnStart() {
@@ -27,6 +29,7 @@ class EventApp {
 				await evtObj.initSync();
 				this.#events.set(Number(eventIDRaw), evtObj);
 				this.#scheduleDestroy(Number(eventIDRaw));
+				this.#scheduleReminder(Number(eventIDRaw));
 			}
 		}
 		this.#inited.forEach((r) => r(true));
@@ -57,6 +60,7 @@ class EventApp {
 		const newEvent = new EventHandlers(this.#instances, opt);
 		this.#events.set(opt.eventID, newEvent);
 		this.#scheduleDestroy(opt.eventID);
+		this.#scheduleReminder(opt.eventID);
 		this.scheduleSave();
 		return newEvent;
 	}
@@ -114,6 +118,8 @@ class EventApp {
 	#clearAllTimers() {
 		for (const timeout of this.#timers.values()) clearTimeout(timeout);
 		this.#timers.clear();
+		for (const timeout of this.#reminderTimers.values()) clearTimeout(timeout);
+		this.#reminderTimers.clear();
 		return;
 	}
 
@@ -132,6 +138,58 @@ class EventApp {
 		return;
 	}
 
+	#scheduleReminder(eventID, retry = 0) {
+		this.#clearReminder(eventID);
+		const eventObj = this.#events.get(eventID);
+		if (!eventObj) return;
+		if (!eventObj.details?.passcodeEndTime && retry === 0) {
+			eventObj.initSync().then(() => this.#scheduleReminder(eventID, retry + 1));
+			return;
+		}
+		if (!eventObj.details.passcodeEndTime) return;
+		const now = Date.now();
+		const delayMs = new Date(eventObj.details.passcodeEndTime).getTime() - now;
+		if (delayMs < 0) return;
+		if (delayMs === 0) {
+			void this.#broadcastReminder(eventID);
+			return;
+		}
+		const timeout = setTimeout(() => {
+			this.#reminderTimers.delete(eventID);
+			void this.#broadcastReminder(eventID);
+		}, delayMs);
+		this.#reminderTimers.set(eventID, timeout);
+		return;
+	}
+
+	#clearReminder(eventID) {
+		const timeout = this.#reminderTimers.get(eventID);
+		if (timeout) clearTimeout(timeout);
+		this.#reminderTimers.delete(eventID);
+		return;
+	}
+
+	async #broadcastReminder(eventID) {
+		const eventObj = this.#events.get(eventID);
+		if (!eventObj) return;
+		const { noEndStat, notMeeting } = await eventObj.getReminderRecipients();
+		const title = eventObj.details.title;
+		const sendTo = async (recipients, text) => {
+			await Promise.all(
+				recipients.map(async (userObj) => {
+					try {
+						await this.#instances.telegram?.methods?.sendMessage(userObj.id, text);
+					} catch (e) {
+						console.error(e);
+					}
+				})
+			);
+		};
+		if (noEndStat.length) await sendTo(noEndStat, `<b>Reminder:</b> Please submit your end stat for <i>${title}</i>.`);
+		if (notMeeting.length) await sendTo(notMeeting, `<b>Reminder:</b> Your lifetime AP gain is below 10,000. Please re-submit your end stat.`);
+		return;
+	}
+
 	getLeaderEvents(username) {
 		const events = [];
 		for (const eventObj of this.#events.values())
@@ -144,7 +202,7 @@ class EventApp {
 		const now = new Date();
 		const events = [];
 		for (const eventObj of this.#events.values())
-			if (/*eventObj.sheetID && */ eventObj.details.passcodeStartTime < now && now < new Date(eventObj.details.passcodeEndTime.getTime() + 2 * 60 * 60 * 1000))
+			if (eventObj.sheetID && eventObj.details.passcodeStartTime < now && now < new Date(eventObj.details.passcodeEndTime.getTime() + 2 * 60 * 60 * 1000))
 				events.push(eventObj);
 		return events;
 	}

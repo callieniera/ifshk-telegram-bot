@@ -59,10 +59,8 @@ class TelegramMessagesHandlers {
 		};
 		setImmediate(async () => {
 			const events = this.#instances.events.getLeaderEvents(user_info.username);
-			if (!events.length) {
-				this.#instances.telegram.methods.sendMessage(chat_info.id, `<i>Error: No available event.</i>`, opt);
-				return;
-			} else if (events.length === 1) {
+			if (!events.length) return;
+			else if (events.length === 1) {
 				const evtObj = events[0];
 				const res = await evtObj.setSheet(message_info.content);
 				if (res?.ok) this.#instances.events.scheduleSave();

@@ -15,6 +15,7 @@ class EventHandlers {
 		if (opt.details) this.details = opt.details;
 		if (opt.users) this.users = opt.users;
 		if (opt.qrcodes) this.#sentCheckinQrCode = new Map(Object.entries(opt.qrcodes));
+		if (opt.passcode) this.#passcode = opt.passcode;
 		this.#initOnStart();
 	}
 	#instances;
@@ -502,6 +503,53 @@ class EventHandlers {
 		}
 	}
 
+	#passcode;
+
+	get passcode() {
+		return this.#passcode;
+	}
+
+	set passcode(value) {
+		this.#passcode = String(value);
+		this.#instances.events?.scheduleSave();
+		return;
+	}
+
+	async getReminderRecipients() {
+		await this.initSync();
+		const noEndStat = [];
+		const notMeeting = [];
+		if (!this.#opt.sheetID) return { noEndStat, notMeeting };
+		const token = await this.#instances.google.getServiceAccountToken();
+		const rows = await getRange(token, this.#opt.sheetID, "'Data'!A:O");
+		rows.splice(0, 1);
+		const seen = { noEndStat: new Set(), notMeeting: new Set() };
+		for (const row of rows) {
+			const id = Number(row[2]);
+			if (!id || Number.isNaN(id)) continue;
+			const a = row[0];
+			const h = row[7];
+			const j = Number(row[9]);
+			const k = row[10];
+			const agentName = row[4];
+			const hFilled = h !== "" && h != null;
+			if (!hFilled) {
+				if (seen.noEndStat.has(id)) continue;
+				seen.noEndStat.add(id);
+				noEndStat.push({ id, agentName });
+				continue;
+			}
+			const apGained = Number(k) - j;
+			if (!(apGained >= 10000)) {
+				if (seen.notMeeting.has(id)) continue;
+				seen.notMeeting.add(id);
+				notMeeting.push({ id, agentName });
+				continue;
+			}
+		}
+		return { noEndStat, notMeeting };
+	}
+
 	exportSaveData() {
 		const exportValue = {
 			...this.#opt,
@@ -509,6 +557,7 @@ class EventHandlers {
 		exportValue.details = this.#details;
 		exportValue.users = Object.fromEntries(this.#userMap.entries());
 		exportValue.qrcodes = Object.fromEntries(this.#sentCheckinQrCode.entries());
+		exportValue.passcode = this.#passcode;
 		return exportValue;
 	}
 }

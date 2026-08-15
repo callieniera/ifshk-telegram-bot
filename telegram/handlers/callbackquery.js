@@ -61,7 +61,7 @@ class TelegramCallbackqueryHandlers {
 		return false;
 	}
 
-	sheet(chat_info, user_info, callback_info, json) {
+	sheet(chat_info, user_info, callback_info) {
 		setImmediate(async () => {
 			if (
 				callback_info.message_info.reply_to_message?.message_id === undefined ||
@@ -105,6 +105,51 @@ class TelegramCallbackqueryHandlers {
 							: `<b>Failed to set sheet!</b>\nError: ${res?.error || "Internal Error"}`;
 				await this.#instances.telegram.methods.editMessageText(chat_info.id, callback_info.message_info.message_id, error, opt);
 			}
+			return;
+		});
+		return false;
+	}
+
+	passcode(chat_info, user_info, callback_info) {
+		setImmediate(async () => {
+			if (
+				callback_info.message_info.reply_to_message?.message_id === undefined ||
+				String(callback_info.message_info.reply_to_message?.text || "").length === 0
+			) {
+				await this.#instances.telegram.methods.editMessageText(
+					chat_info.id,
+					callback_info.message_info.message_id,
+					`<i>Error: What are you submitting?</i>`,
+					opt
+				);
+				return;
+			}
+			const opt = {
+				reply_parameters: {
+					message_id: callback_info.message_info.reply_to_message.message_id,
+					allow_sending_without_reply: true,
+				},
+			};
+			const now = new Date();
+			const events = this.#instances.events
+				.getLeaderEvents(user_info.username)
+				.filter(
+					(evtObj) =>
+						evtObj.details.passcodeStartTime && evtObj.details.passcodeEndTime && evtObj.details.passcodeStartTime < now && now < evtObj.details.passcodeEndTime
+				);
+			const evtObj = events.find((v) => v.id === Number(callback_info.value));
+			if (!evtObj) {
+				await this.#instances.telegram.methods.editMessageText(chat_info.id, callback_info.message_info.message_id, `<i>Error: Event not found.</i>`, opt);
+				return;
+			}
+			const passcode = String(callback_info.message_info.reply_to_message.text);
+			evtObj.passcode = passcode;
+			await this.#instances.telegram.methods.editMessageText(
+				chat_info.id,
+				callback_info.message_info.message_id,
+				`<b>✅ Passcode set</b>: <code>${passcode}</code>`,
+				opt
+			);
 			return;
 		});
 		return false;
