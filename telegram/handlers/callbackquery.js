@@ -50,7 +50,7 @@ class TelegramCallbackqueryHandlers {
 			}
 			if (typeof submitRes === "object") {
 				if (serviceMsg.ok) this.#instances.telegram.methods.deleteMessage(chat_info.id, serviceMsg.result.message_id);
-				await this.#instances.telegram.utils.sendCheckinQRCode(user_info, submitRes.agnetName, evtObj.id, opt);
+				await evtObj.sendCheckinQRCode(user_info, submitRes, opt);
 			} else {
 				if (serviceMsg.ok)
 					await this.#instances.telegram.methods.editMessageText(chat_info.id, serviceMsg.result.message_id, "<b>✅ Submitted end stat!</b>", opt);

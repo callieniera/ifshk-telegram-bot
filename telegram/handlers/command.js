@@ -9,7 +9,8 @@ class TelegramCommandHandlers {
 		if (chat_info.id !== user_info.id) return false;
 		const content = String(message_info.content || "");
 		if (!content.length) return false;
-		const [command, value] = content.split("-");
+		const idx = content.indexOf("-");
+		const [command, value] = idx !== -1 ? [content.slice(0, idx), content.slice(idx + 1)] : [content];
 		switch (command) {
 			case "checkin": {
 				if (!value) return false;
@@ -39,9 +40,12 @@ class TelegramCommandHandlers {
 							);
 							return;
 						}
-						const sent = this.#instances.telegram.utils.getSentCheckinQrCode(agentName);
-						if (sent && sent.id === user_info.id) this.#instances.telegram.methods.deleteMessage(sent.id, sent.message_id);
-						this.#instances.telegram.methods.sendMessage(chat_info.id, "<b>✅ Checked in!</b>", opt);
+						const sent = evtObj.getSentCheckinQrCode(agentName);
+						if (sent && sent.id === user_info.id)
+							this.#instances.telegram.methods.deleteMessage(sent.id, sent.message_id).then((v) => {
+								if (v.ok) evtObj.sentCheckinQrCodeDeleted(agentName);
+							});
+						this.#instances.telegram.methods.sendMessage(chat_info.id, `<b>✅ Checked in: ${agentName}</b>`, opt);
 						this.#instances.telegram.methods.sendMessage(sent.id, "<b>✅ You are checked in!</b>");
 					} catch (err) {
 						if (err && err.message) this.#instances.telegram.methods.sendMessage(chat_info.id, `<i>${err.toString()}</i>`, opt);

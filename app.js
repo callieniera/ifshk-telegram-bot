@@ -30,6 +30,9 @@ class App {
 		const instances = { server: this.server, onclose: this.#onclosefn };
 		instances.google = new GoogleServiceAccountAuth();
 		instances.onclose.push(() => instances.google.clearCachedToken());
+		const events = new EventApp(instances);
+		instances.events = events;
+		await events.initSync();
 		const telegram = new TelegramApp(instances, {
 			url: this.url,
 			token: process.env.TG_BOT_TOKEN,
@@ -40,8 +43,6 @@ class App {
 		instances.telegram = telegram;
 		await this.server.listen({ port: Number(this.port), host: "0.0.0.0" });
 		functions.console("appstart", "Entities App Listening on Port:", this.port);
-		const events = new EventApp(instances);
-		instances.events = events;
 		return;
 	}
 
