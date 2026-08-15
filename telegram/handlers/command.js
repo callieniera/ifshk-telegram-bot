@@ -31,6 +31,7 @@ class TelegramCommandHandlers {
 							await this.#instances.telegram.methods.sendMessage(chat_info.id, "<i>Error: Event not found.</i>", opt);
 							return;
 						}
+						evtObj.noteMessage(chat_info.id, message_info.message_id);
 						const res = await evtObj.markParticipated(agentName);
 						if (res === "Agent not found!" || res === false) {
 							await this.#instances.telegram.methods.sendMessage(
@@ -45,8 +46,10 @@ class TelegramCommandHandlers {
 							this.#instances.telegram.methods.deleteMessage(sent.id, sent.message_id).then((v) => {
 								if (v.ok) evtObj.sentCheckinQrCodeDeleted(agentName);
 							});
-						this.#instances.telegram.methods.sendMessage(chat_info.id, `<b>✅ Checked in: ${agentName}</b>`, opt);
-						this.#instances.telegram.methods.sendMessage(sent.id, "<b>✅ You are checked in!</b>");
+						const checkedInRes = await this.#instances.telegram.methods.sendMessage(chat_info.id, `<b>✅ Checked in: ${agentName}</b>`, opt);
+						if (checkedInRes?.ok) evtObj.noteMessage(chat_info.id, checkedInRes.result.message_id);
+						const agentRes = await this.#instances.telegram.methods.sendMessage(sent.id, "<b>✅ You are checked in!</b>");
+						if (agentRes?.ok) evtObj.noteMessage(sent.id, agentRes.result.message_id);
 					} catch (err) {
 						if (err && err.message) this.#instances.telegram.methods.sendMessage(chat_info.id, `<i>${err.toString()}</i>`, opt);
 					}
@@ -113,6 +116,8 @@ class TelegramCommandHandlers {
 						timeStyle: "medium",
 					}).format(zonedBroadcast.toInstant())}</b>`,
 				];
+				delete opt.reply_parameters;
+				this.#instances.telegram.methods.deleteMessage(chat_info.id, message_info.message_id);
 				this.#instances.telegram.methods.sendMessage(chat_info.id, text.join("\n"), opt);
 			} catch (err) {
 				if (err && err.message) this.#instances.telegram.methods.sendMessage(chat_info.id, `<i>${err.toString()}</i>`, opt);
@@ -167,6 +172,8 @@ class TelegramCommandHandlers {
 						timeStyle: "medium",
 					}).format(zonedBroadcast.toInstant())}</b>`,
 				];
+				delete opt.reply_parameters;
+				this.#instances.telegram.methods.deleteMessage(chat_info.id, message_info.message_id);
 				this.#instances.telegram.methods.sendMessage(chat_info.id, text.join("\n"), opt);
 			} catch (err) {
 				if (err && err.message) this.#instances.telegram.methods.sendMessage(chat_info.id, `<i>${err.toString()}</i>`, opt);
@@ -200,8 +207,10 @@ class TelegramCommandHandlers {
 				if (!events.length) return;
 				else if (events.length === 1) {
 					const evtObj = events[0];
+					evtObj.noteMessage(chat_info.id, message_info.message_id);
 					evtObj.passcode = content;
-					this.#instances.telegram.methods.sendMessage(chat_info.id, `<b>✅ Passcode set</b>: <code>${content}</code>`, opt);
+					const passcodeRes = await this.#instances.telegram.methods.sendMessage(chat_info.id, `<b>✅ Passcode set</b>: <code>${content}</code>`, opt);
+					if (passcodeRes?.ok) evtObj.noteMessage(chat_info.id, passcodeRes.result.message_id);
 					return;
 				} else if (events.length > 1) {
 					const inline_keyboard = [];

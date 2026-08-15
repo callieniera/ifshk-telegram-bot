@@ -35,6 +35,7 @@ class TelegramCallbackqueryHandlers {
 				await this.#instances.telegram.methods.editMessageText(chat_info.id, callback_info.message_info.message_id, `<i>Error: Event not found.</i>`, opt);
 				return;
 			}
+			evtObj.noteMessage(chat_info.id, callback_info.message_info.message_id);
 			const serviceMsg = await this.#instances.telegram.methods.editMessageText(
 				chat_info.id,
 				callback_info.message_info.message_id,
@@ -87,6 +88,7 @@ class TelegramCallbackqueryHandlers {
 				await this.#instances.telegram.methods.editMessageText(chat_info.id, callback_info.message_info.message_id, `<i>Error: Event not found.</i>`, opt);
 				return;
 			}
+			evtObj.noteMessage(chat_info.id, callback_info.message_info.message_id);
 			const res = await evtObj.setSheet(String(callback_info.message_info.reply_to_message.text));
 			if (res?.ok) this.#instances.events.scheduleSave();
 			if (res?.ok) {
@@ -142,6 +144,7 @@ class TelegramCallbackqueryHandlers {
 				await this.#instances.telegram.methods.editMessageText(chat_info.id, callback_info.message_info.message_id, `<i>Error: Event not found.</i>`, opt);
 				return;
 			}
+			evtObj.noteMessage(chat_info.id, callback_info.message_info.message_id);
 			const passcode = String(callback_info.message_info.reply_to_message.text);
 			evtObj.passcode = passcode;
 			await this.#instances.telegram.methods.editMessageText(

@@ -20,6 +20,7 @@ class TelegramMessagesHandlers {
 				return;
 			} else if (events.length === 1) {
 				const evtObj = events[0];
+				evtObj.noteMessage(chat_info.id, message_info.message_id);
 				const serviceMsg = await this.#instances.telegram.methods.sendMessage(chat_info.id, `<i>Submitting, please wait...</i>`, opt);
 				const submitRes = await evtObj.submit(String(message_info.content), user_info);
 				if (!submitRes || typeof submitRes === "string") {

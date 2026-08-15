@@ -17,6 +17,8 @@ class EventHandlers {
 		if (opt.qrcodes) this.#sentCheckinQrCode = new Map(Object.entries(opt.qrcodes));
 		if (opt.passcode) this.#passcode = opt.passcode;
 		if (opt.sentPasscode) this.#sentPasscode = new Map(Object.entries(opt.sentPasscode));
+		if (opt.messages)
+			this.#messages = new Map(Object.entries(opt.messages).map(([chat_id, ids]) => [String(chat_id), new Set((ids || []).map((v) => Number(v)))]));
 		this.#initOnStart();
 	}
 	#instances;
@@ -453,6 +455,8 @@ class EventHandlers {
 
 	#sentPasscode = new Map();
 
+	#messages = new Map();
+
 	getSentCheckinQrCode(agentName) {
 		return this.#sentCheckinQrCode.get(agentName) || null;
 	}
@@ -461,6 +465,46 @@ class EventHandlers {
 		this.#sentCheckinQrCode.delete(agentName);
 		this.#instances.events?.scheduleSave();
 		return;
+	}
+
+	// Record any message (user or bot) tied to this event so it can be deleted on destroy.
+	noteMessage(chat_id, message_id) {
+		if (chat_id == null || message_id == null) return;
+		const key = String(chat_id);
+		const numeric = Number(message_id);
+		if (Number.isNaN(numeric)) return;
+		if (!this.#messages.has(key)) this.#messages.set(key, new Set());
+		this.#messages.get(key).add(numeric);
+		this.#instances.events?.scheduleSave();
+		return;
+	}
+
+	// Collect all tracked message_ids grouped by chat_id, chunked to 100 (Telegram deleteMessages cap).
+	collectMessageDeletions() {
+		const groups = new Map();
+		const add = (chat_id, message_id) => {
+			const key = String(chat_id);
+			const numeric = Number(message_id);
+			if (numeric == null || Number.isNaN(numeric)) return;
+			if (!groups.has(key)) groups.set(key, new Set());
+			groups.get(key).add(numeric);
+		};
+
+		// Generic registry (user messages + bot confirmations).
+		for (const [chat_id, set] of this.#messages.entries()) {
+			for (const id of set) add(chat_id, id);
+		}
+
+		// Existing per-agent bot message maps: { id, message_id }.
+		for (const entry of this.#sentCheckinQrCode.values()) add(entry?.id, entry?.message_id);
+		for (const entry of this.#sentPasscode.values()) add(entry?.id, entry?.message_id);
+
+		const result = [];
+		for (const [chat_id, set] of groups.entries()) {
+			const ids = [...set];
+			for (let i = 0; i < ids.length; i += 100) result.push({ chat_id: Number(chat_id), message_ids: ids.slice(i, i + 100) });
+		}
+		return result;
 	}
 
 	async sendCheckinQRCode(user_info, { agentName, agentFaction }, opt) {
@@ -600,7 +644,7 @@ class EventHandlers {
 		try {
 			const res = await this.#instances.telegram?.methods?.sendMessage(recipient.id, `<code>${this.#passcode}</code>`);
 			if (res?.ok) {
-				this.#sentPasscode.set(key, true);
+				this.#sentPasscode.set(key, { id: recipient.id, message_id: res.result.message_id });
 				this.#instances.events?.scheduleSave();
 			}
 		} catch (e) {
@@ -638,6 +682,7 @@ class EventHandlers {
 		exportValue.qrcodes = Object.fromEntries(this.#sentCheckinQrCode.entries());
 		exportValue.passcode = this.#passcode;
 		exportValue.sentPasscode = Object.fromEntries(this.#sentPasscode.entries());
+		exportValue.messages = Object.fromEntries([...this.#messages.entries()].map(([chat_id, set]) => [chat_id, [...set]]));
 		return exportValue;
 	}
 }

@@ -178,7 +178,8 @@ class EventApp {
 			await Promise.all(
 				recipients.map(async (userObj) => {
 					try {
-						await this.#instances.telegram?.methods?.sendMessage(userObj.id, text);
+						const res = await this.#instances.telegram?.methods?.sendMessage(userObj.id, text);
+						if (res?.ok) eventObj.noteMessage(userObj.id, res.result.message_id);
 					} catch (e) {
 						console.error(e);
 					}
@@ -219,8 +220,23 @@ class EventApp {
 	destroyEvent(eventID) {
 		this.#clearDestroy(eventID);
 		if (this.#events.has(eventID)) {
+			const eventObj = this.#events.get(eventID);
 			this.#events.delete(eventID);
 			this.scheduleSave();
+			void this.#deleteEventMessages(eventObj);
+			}
+		return;
+	}
+
+	async #deleteEventMessages(eventObj) {
+		if (!eventObj) return;
+		const groups = eventObj.collectMessageDeletions();
+		for (const group of groups) {
+			try {
+				await this.#instances.telegram?.methods?.deleteMessages(group.chat_id, group.message_ids);
+			} catch (e) {
+				console.error(e);
+			}
 		}
 		return;
 	}

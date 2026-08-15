@@ -67,6 +67,9 @@ class TelegramMethods {
 		"Bad Request: member not found",
 		"Bad Request: message to unpin not found",
 		"Bad Request: message can't be deleted for everyone",
+		"Bad Request: message to edit not found",
+		"Bad Request: message can't be edited",
+		"Bad Request: message can't be deleted",
 	];
 
 	async sendMessage(chat_id, text, additionalOptions) {
