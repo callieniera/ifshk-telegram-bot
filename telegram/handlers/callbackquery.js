@@ -8,13 +8,19 @@ class TelegramCallbackqueryHandlers {
 	#instances;
 
 	#cachedQuery = new Set();
+
 	stat(chat_info, user_info, callback_info) {
 		setImmediate(async () => {
 			if (
 				callback_info.message_info.reply_to_message?.message_id === undefined ||
 				String(callback_info.message_info.reply_to_message?.text || "").length === 0
 			) {
-				await this.#instances.telegram.methods.editMessageText(chat_info.id, `<i>Error: What are you submitting?</i>`, opt);
+				await this.#instances.telegram.methods.editMessageText(
+					chat_info.id,
+					callback_info.message_info.message_id,
+					`<i>Error: What are you submitting?</i>`,
+					opt
+				);
 				return;
 			}
 			const opt = {
@@ -26,7 +32,7 @@ class TelegramCallbackqueryHandlers {
 			const events = this.#instances.events.getCurrentEvent();
 			const evtObj = events.find((v) => v.id === Number(callback_info.value));
 			if (!evtObj) {
-				await this.#instances.telegram.methods.editMessageText(chat_info.id, `<i>Error: Event not found.</i>`, opt);
+				await this.#instances.telegram.methods.editMessageText(chat_info.id, callback_info.message_info.message_id, `<i>Error: Event not found.</i>`, opt);
 				return;
 			}
 			const serviceMsg = await this.#instances.telegram.methods.editMessageText(
@@ -49,6 +55,55 @@ class TelegramCallbackqueryHandlers {
 				if (serviceMsg.ok)
 					await this.#instances.telegram.methods.editMessageText(chat_info.id, serviceMsg.result.message_id, "<b>✅ Submitted end stat!</b>", opt);
 				else await this.#instances.telegram.methods.sendMessage(chat_info.id, "<b>✅ Submitted end stat!</b>", opt);
+			}
+			return;
+		});
+		return false;
+	}
+
+	sheet(chat_info, user_info, callback_info, json) {
+		setImmediate(async () => {
+			if (
+				callback_info.message_info.reply_to_message?.message_id === undefined ||
+				String(callback_info.message_info.reply_to_message?.text || "").length === 0
+			) {
+				await this.#instances.telegram.methods.editMessageText(
+					chat_info.id,
+					callback_info.message_info.message_id,
+					`<i>Error: What are you submitting?</i>`,
+					opt
+				);
+				return;
+			}
+			const opt = {
+				reply_parameters: {
+					message_id: callback_info.message_info.reply_to_message.message_id,
+					allow_sending_without_reply: true,
+				},
+			};
+			const events = this.#instances.events.getLeaderEvents(user_info.username);
+			const evtObj = events.find((v) => v.id === Number(callback_info.value));
+			if (!evtObj) {
+				await this.#instances.telegram.methods.editMessageText(chat_info.id, callback_info.message_info.message_id, `<i>Error: Event not found.</i>`, opt);
+				return;
+			}
+			const res = await evtObj.setSheet(String(callback_info.message_info.reply_to_message.text));
+			if (res?.ok) this.#instances.events.scheduleSave();
+			if (res?.ok) {
+				await this.#instances.telegram.methods.editMessageText(
+					chat_info.id,
+					callback_info.message_info.message_id,
+					`<b>✅ Sheet set!</b>\n<i>${evtObj.details.title}</i>`,
+					opt
+				);
+			} else {
+				const error =
+					res?.error === "SHEET_ACCESS_DENIED"
+						? `<i>Error: The bot can't access this sheet. Please share it with the service account.</i>`
+						: res?.error === "SHEET_NOT_FOUND"
+							? `<i>Error: Sheet not found.</i>`
+							: `<b>Failed to set sheet!</b>\nError: ${res?.error || "Internal Error"}`;
+				await this.#instances.telegram.methods.editMessageText(chat_info.id, callback_info.message_info.message_id, error, opt);
 			}
 			return;
 		});

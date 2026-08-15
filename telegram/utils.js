@@ -29,9 +29,9 @@ class TelegramUtils {
 
 	chatTextType(string) {
 		const matches = String(string).match(/\r?\n/g);
-		if (matches && matches.length === 1 && string.indexOf("Time Span") === 0) return "stat"
-		
-		return "other"
+		if (matches && matches.length === 1 && string.indexOf("Time Span") === 0) return "stat";
+		if (String(string).includes("docs.google.com/spreadsheets")) return "sheet";
+		return "other";
 	}
 
 	#sentCheckinQrCode = new Map();

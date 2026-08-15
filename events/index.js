@@ -133,9 +133,10 @@ class EventApp {
 	}
 
 	getLeaderEvents(username) {
-		const events = {};
-		for (const [eventID, eventObj] of this.#events.entries())
-			if (eventObj.details.leaderEnl.username === username || eventObj.details.leaderRes.username === username) events[eventID] = eventObj;
+		const events = [];
+		for (const eventObj of this.#events.values())
+			if (eventObj.details.leaderEnl.username === username.toLocaleLowerCase() || eventObj.details.leaderRes.username === username.toLocaleLowerCase())
+				events.push(eventObj);
 		return events;
 	}
 
