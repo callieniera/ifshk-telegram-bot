@@ -25,10 +25,11 @@ class TelegramCommandHandlers {
 					},
 				};
 				setImmediate(async () => {
+					const i18n = this.#instances.i18n;
 					try {
 						const evtObj = this.#instances.events.getEvent(eventID);
 						if (!evtObj) {
-							await this.#instances.telegram.methods.sendMessage(chat_info.id, "<i>Error: Event not found.</i>", opt);
+							await this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "error.event_not_found"), opt);
 							return;
 						}
 						evtObj.noteMessage(chat_info.id, message_info.message_id);
@@ -36,7 +37,7 @@ class TelegramCommandHandlers {
 						if (res === "Agent not found!" || res === false) {
 							await this.#instances.telegram.methods.sendMessage(
 								chat_info.id,
-								`<i>${res === "Agent not found!" ? "Agent not found!" : "Failed to mark as participated."}</i>`,
+								`<i>${res === "Agent not found!" ? i18n.t(user_info, "error.agent_not_found") : i18n.t(user_info, "error.participate_failed")}</i>`,
 								opt
 							);
 							return;
@@ -46,9 +47,9 @@ class TelegramCommandHandlers {
 							this.#instances.telegram.methods.deleteMessage(sent.id, sent.message_id).then((v) => {
 								if (v.ok) evtObj.sentCheckinQrCodeDeleted(agentName);
 							});
-						const checkedInRes = await this.#instances.telegram.methods.sendMessage(chat_info.id, `<b>✅ Checked in: ${agentName}</b>`, opt);
+						const checkedInRes = await this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "success.checked_in", { agentName }), opt);
 						if (checkedInRes?.ok) evtObj.noteMessage(chat_info.id, checkedInRes.result.message_id);
-						const agentRes = await this.#instances.telegram.methods.sendMessage(sent.id, "<b>✅ You are checked in!</b>");
+						const agentRes = await this.#instances.telegram.methods.sendMessage(sent.id, i18n.t(user_info, "success.checked_in_self"));
 						if (agentRes?.ok) evtObj.noteMessage(sent.id, agentRes.result.message_id);
 					} catch (err) {
 						if (err && err.message) this.#instances.telegram.methods.sendMessage(chat_info.id, `<i>${err.toString()}</i>`, opt);
@@ -76,6 +77,8 @@ class TelegramCommandHandlers {
 			},
 		};
 		setImmediate(async () => {
+			const i18n = this.#instances.i18n;
+			const locale = i18n.resolveLocale(user_info?.language_code);
 			const eventID = Number(new URL(message_info.content).searchParams.get("e"));
 			try {
 				const eventObj = this.#instances.events.createNewEvent({ eventID: eventID });
@@ -96,25 +99,16 @@ class TelegramCommandHandlers {
 				const zonedFrom = fromTime.toZonedDateTimeISO(formattedOffset);
 				const zonedTill = tillTime.toZonedDateTimeISO(formattedOffset);
 				const zonedBroadcast = broadcastTime.toZonedDateTimeISO(formattedOffset);
+				const dateOpt = { timeZone: "Asia/Hong_Kong", dateStyle: "short", timeStyle: "medium" };
 				const text = [
-					`IFS Event added: <i>${details.title}</i>`,
+					i18n.t(user_info, "new.event_added", { title: details.title }),
 					"",
-					`Timezone: <b>${details.timezone}</b>`,
-					`Accept stat from <b>${new Intl.DateTimeFormat("en-HK", {
-						timeZone: zonedFrom.timeZoneId, // Inherits '+08:00' dynamically
-						dateStyle: "short",
-						timeStyle: "medium",
-					}).format(zonedFrom.toInstant())}</b>`,
-					`Accept stat till <b>${new Intl.DateTimeFormat("en-HK", {
-						timeZone: zonedTill.timeZoneId, // Inherits '+08:00' dynamically
-						dateStyle: "short",
-						timeStyle: "medium",
-					}).format(zonedTill.toInstant())}</b>`,
-					`Remind broadcast <b>${new Intl.DateTimeFormat("en-HK", {
-						timeZone: zonedBroadcast.timeZoneId, // Inherits '+08:00' dynamically
-						dateStyle: "short",
-						timeStyle: "medium",
-					}).format(zonedBroadcast.toInstant())}</b>`,
+					i18n.t(user_info, "new.timezone", { timezone: details.timezone }),
+					i18n.t(user_info, "new.accept_from", { date: i18n.formatDate(zonedFrom.toInstant(), locale, { ...dateOpt, timeZone: zonedFrom.timeZoneId }) }),
+					i18n.t(user_info, "new.accept_till", { date: i18n.formatDate(zonedTill.toInstant(), locale, { ...dateOpt, timeZone: zonedTill.timeZoneId }) }),
+					i18n.t(user_info, "new.remind_broadcast", {
+						date: i18n.formatDate(zonedBroadcast.toInstant(), locale, { ...dateOpt, timeZone: zonedBroadcast.timeZoneId }),
+					}),
 				];
 				delete opt.reply_parameters;
 				this.#instances.telegram.methods.deleteMessage(chat_info.id, message_info.message_id);
@@ -140,6 +134,8 @@ class TelegramCommandHandlers {
 			},
 		};
 		setImmediate(async () => {
+			const i18n = this.#instances.i18n;
+			const locale = i18n.resolveLocale(user_info?.language_code);
 			try {
 				const eventObj = this.#instances.events.createNewEvent(eventOpt);
 				await eventObj.initSync();
@@ -152,25 +148,16 @@ class TelegramCommandHandlers {
 				const zonedFrom = fromTime.toZonedDateTimeISO(formattedOffset);
 				const zonedTill = tillTime.toZonedDateTimeISO(formattedOffset);
 				const zonedBroadcast = broadcastTime.toZonedDateTimeISO(formattedOffset);
+				const dateOpt = { timeZone: "Asia/Hong_Kong", dateStyle: "short", timeStyle: "medium" };
 				const text = [
-					`IFS Event added: <i>${details.title} (${eventObj.id})</i>`,
+					i18n.t(user_info, "new.event_added_test", { title: details.title, id: eventObj.id }),
 					"",
-					`Timezone: <b>${details.timezone}</b>`,
-					`Accept stat from <b>${new Intl.DateTimeFormat("en-HK", {
-						timeZone: zonedFrom.timeZoneId, // Inherits '+08:00' dynamically
-						dateStyle: "short",
-						timeStyle: "medium",
-					}).format(zonedFrom.toInstant())}</b>`,
-					`Accept stat till <b>${new Intl.DateTimeFormat("en-HK", {
-						timeZone: zonedTill.timeZoneId, // Inherits '+08:00' dynamically
-						dateStyle: "short",
-						timeStyle: "medium",
-					}).format(zonedTill.toInstant())}</b>`,
-					`Remind broadcast <b>${new Intl.DateTimeFormat("en-HK", {
-						timeZone: zonedBroadcast.timeZoneId, // Inherits '+08:00' dynamically
-						dateStyle: "short",
-						timeStyle: "medium",
-					}).format(zonedBroadcast.toInstant())}</b>`,
+					i18n.t(user_info, "new.timezone", { timezone: details.timezone }),
+					i18n.t(user_info, "new.accept_from", { date: i18n.formatDate(zonedFrom.toInstant(), locale, { ...dateOpt, timeZone: zonedFrom.timeZoneId }) }),
+					i18n.t(user_info, "new.accept_till", { date: i18n.formatDate(zonedTill.toInstant(), locale, { ...dateOpt, timeZone: zonedTill.timeZoneId }) }),
+					i18n.t(user_info, "new.remind_broadcast", {
+						date: i18n.formatDate(zonedBroadcast.toInstant(), locale, { ...dateOpt, timeZone: zonedBroadcast.timeZoneId }),
+					}),
 				];
 				delete opt.reply_parameters;
 				this.#instances.telegram.methods.deleteMessage(chat_info.id, message_info.message_id);
@@ -193,6 +180,7 @@ class TelegramCommandHandlers {
 			},
 		};
 		setImmediate(async () => {
+			const i18n = this.#instances.i18n;
 			try {
 				const now = new Date();
 				const events = this.#instances.events
@@ -209,15 +197,19 @@ class TelegramCommandHandlers {
 					const evtObj = events[0];
 					evtObj.noteMessage(chat_info.id, message_info.message_id);
 					evtObj.passcode = content;
-					const passcodeRes = await this.#instances.telegram.methods.sendMessage(chat_info.id, `<b>✅ Passcode set</b>: <code>${content}</code>`, opt);
+					const passcodeRes = await this.#instances.telegram.methods.sendMessage(
+						chat_info.id,
+						i18n.t(user_info, "success.passcode_set", { passcode: content }),
+						opt
+					);
 					if (passcodeRes?.ok) evtObj.noteMessage(chat_info.id, passcodeRes.result.message_id);
 					return;
 				} else if (events.length > 1) {
 					const inline_keyboard = [];
 					for (const evtObj of events) inline_keyboard.push([{ text: evtObj.details.title, callback_data: `passcode_${evtObj.id}` }]);
-					inline_keyboard.push([{ text: "Cancel", style: "danger", callback_data: "close" }]);
+					inline_keyboard.push([{ text: i18n.t(user_info, "button.cancel"), style: "danger", callback_data: "close" }]);
 					opt.reply_markup = { inline_keyboard };
-					await this.#instances.telegram.methods.sendMessage(chat_info.id, `<b>Please choose an event:</b>`, opt);
+					await this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "prompt.choose_event"), opt);
 					return;
 				}
 			} catch (err) {

@@ -226,18 +226,24 @@ class EventHandlers {
 	#userMap = new Map();
 
 	set users(object) {
-		this.#userMap = new Map(Object.entries(object).map((v) => [Number(v[0]), v[1]]));
+		this.#userMap = new Map(
+			Object.entries(object).map((v) => {
+				const info = v[1];
+				return [Number(v[0]), typeof info === "object" && info ? info : { agentName: info, languageCode: undefined }];
+			})
+		);
 	}
 
 	async submit(string, user_info) {
+		const i18n = this.#instances.i18n;
 		const { ok, values, error } = this.#stringParser(string);
-		if (!ok || error) return `Parse failed: ${error || "Unknown Error"}`;
+		if (!ok || error) return i18n.t(user_info, "error.parse_failed", { error: error || i18n.t(user_info, "error.parse_unknown") });
 
-		// Validate required fields
+			// Validate required fields
 		const requiredKeys = ["AgentName", "AgentFaction", "Date(yyyy-mm-dd)", "Time(hh:mm:ss)", "Level", "LifetimeAP", "XMRecharged"];
 		for (const key of requiredKeys) {
 			if (values[key] === undefined || values[key] === "") {
-				return `Missing or empty field: ${key}`;
+				return i18n.t(user_info, "error.missing_field", { field: key });
 			}
 		}
 		if (this.#opt.isTest && !this.#opt.sheetID) return true;
@@ -253,9 +259,9 @@ class EventHandlers {
 			await this.initSync();
 			const idx = await this.#getRowByAgentName(agentName);
 			const value = { agentName, agentFaction, level, lifetimeAP, xmRecharged, id: user_info.id };
-			const res = idx === -1 ? await this.#buildNewEntry(value) : await this.#updateEntry(idx, value);
+			const res = idx === -1 ? await this.#buildNewEntry(value) : await this.#updateEntry(idx, value, user_info);
 			if (res && idx === -1) {
-				this.#userMap.set(user_info.id, agentName);
+				this.#userMap.set(user_info.id, { agentName, languageCode: user_info.language_code });
 				this.#instances.events.scheduleSave();
 				return { agentName, agentFaction };
 			}
@@ -273,7 +279,6 @@ class EventHandlers {
 			await this.initSync();
 			const idx = await this.#getRowByAgentName(agentName);
 			if (idx === -1) return `Agent not found!`;
-
 			const token = await this.#instances.google.getServiceAccountToken();
 			const [[value]] = await getRange(token, this.#opt.sheetID, `'Data'!A${idx}`);
 			if (value === "TRUE") return true;
@@ -332,7 +337,8 @@ class EventHandlers {
 		}
 	}
 
-	async #updateEntry(idx, values) {
+	async #updateEntry(idx, values, user_info) {
+		const i18n = this.#instances.i18n;
 		const token = await this.#instances.google.getServiceAccountToken();
 		const currentValue = await getRange(token, this.#opt.sheetID, `'Data'!A${idx}:O${idx}`);
 		const newValue = currentValue[0].map((v) => {
@@ -341,7 +347,7 @@ class EventHandlers {
 			if (!isNaN(Number(v))) return Number(v);
 			return v;
 		});
-		if (values.id !== newValue[2]) return `Telegram account not match.`;
+		if (values.id !== newValue[2]) return i18n.t(user_info, "error.account_not_match");
 		if (values.lifetimeAP > Number(newValue[9])) {
 			newValue[7] = values.level;
 			newValue[8] = undefined;
@@ -349,7 +355,7 @@ class EventHandlers {
 			newValue[11] = undefined;
 			newValue[13] = values.xmRecharged;
 			newValue[14] = undefined;
-		} else return "Lifetime AP hasn't been updated since the last submission.";
+				} else return i18n.t(user_info, "error.lifetime_ap");
 		try {
 			await updateRange(token, this.#opt.sheetID, `'Data'!A${idx}:O${idx}`, [newValue]);
 			void this.#maybeSendPasscode(values, newValue);
@@ -548,7 +554,7 @@ class EventHandlers {
 			}
 		} catch (err) {
 			console.error(err);
-			const tg_res = await this.#instances.telegram.methods.sendMessage(user_info.id, "<i>Error: Unable to generate QR Code for check-in.</i>", opt);
+			const tg_res = await this.#instances.telegram.methods.sendMessage(user_info.id, this.#instances.i18n.t(user_info, "error.qr_failed"), opt);
 			if (tg_res.ok) {
 				this.#sentCheckinQrCode.set(agentName, { id: user_info.id, message_id: tg_res.result.message_id });
 				this.#instances.events?.scheduleSave();
@@ -617,6 +623,10 @@ class EventHandlers {
 		// Column K - Column J (idx 9) must be >= 10000
 		const j = Number(row[9]);
 		return Number(k) - j >= 10000;
+	}
+
+	getLanguageCode(id) {
+		return this.#userMap.get(Number(id))?.languageCode;
 	}
 
 	async getPasscodeRecipients() {

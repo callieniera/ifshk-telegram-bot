@@ -11,6 +11,7 @@ class TelegramCallbackqueryHandlers {
 
 	stat(chat_info, user_info, callback_info) {
 		setImmediate(async () => {
+			const i18n = this.#instances.i18n;
 			if (
 				callback_info.message_info.reply_to_message?.message_id === undefined ||
 				String(callback_info.message_info.reply_to_message?.text || "").length === 0
@@ -18,7 +19,7 @@ class TelegramCallbackqueryHandlers {
 				await this.#instances.telegram.methods.editMessageText(
 					chat_info.id,
 					callback_info.message_info.message_id,
-					`<i>Error: What are you submitting?</i>`,
+					i18n.t(user_info, "error.what_submitting"),
 					opt
 				);
 				return;
@@ -32,19 +33,24 @@ class TelegramCallbackqueryHandlers {
 			const events = this.#instances.events.getCurrentEvent();
 			const evtObj = events.find((v) => v.id === Number(callback_info.value));
 			if (!evtObj) {
-				await this.#instances.telegram.methods.editMessageText(chat_info.id, callback_info.message_info.message_id, `<i>Error: Event not found.</i>`, opt);
+				await this.#instances.telegram.methods.editMessageText(
+					chat_info.id,
+					callback_info.message_info.message_id,
+					i18n.t(user_info, "error.event_not_found"),
+					opt
+				);
 				return;
 			}
 			evtObj.noteMessage(chat_info.id, callback_info.message_info.message_id);
 			const serviceMsg = await this.#instances.telegram.methods.editMessageText(
 				chat_info.id,
 				callback_info.message_info.message_id,
-				`<i>Submitting, please wait...</i>`,
+				i18n.t(user_info, "success.submitting"),
 				opt
 			);
 			const submitRes = await evtObj.submit(String(callback_info.message_info.reply_to_message.text), user_info);
 			if (!submitRes || typeof submitRes === "string") {
-				const text = `<b>Failed to submit stat!</b>\nError: ${submitRes ? submitRes : "Internal Error"}`;
+				const text = i18n.t(user_info, "error.submit_failed", { error: submitRes || i18n.t(user_info, "error.submit_internal") });
 				if (serviceMsg.ok) this.#instances.telegram.methods.editMessageText(chat_info.id, serviceMsg.result.message_id, text);
 				else this.#instances.telegram.methods.sendMessage(chat_info.id, text, opt);
 				return;
@@ -53,9 +59,9 @@ class TelegramCallbackqueryHandlers {
 				if (serviceMsg.ok) this.#instances.telegram.methods.deleteMessage(chat_info.id, serviceMsg.result.message_id);
 				await evtObj.sendCheckinQRCode(user_info, submitRes, opt);
 			} else {
-				if (serviceMsg.ok)
-					await this.#instances.telegram.methods.editMessageText(chat_info.id, serviceMsg.result.message_id, "<b>✅ Submitted end stat!</b>", opt);
-				else await this.#instances.telegram.methods.sendMessage(chat_info.id, "<b>✅ Submitted end stat!</b>", opt);
+				const submitted = i18n.t(user_info, "success.submitted");
+				if (serviceMsg.ok) await this.#instances.telegram.methods.editMessageText(chat_info.id, serviceMsg.result.message_id, submitted, opt);
+				else await this.#instances.telegram.methods.sendMessage(chat_info.id, submitted, opt);
 			}
 			return;
 		});
@@ -64,6 +70,7 @@ class TelegramCallbackqueryHandlers {
 
 	sheet(chat_info, user_info, callback_info) {
 		setImmediate(async () => {
+			const i18n = this.#instances.i18n;
 			if (
 				callback_info.message_info.reply_to_message?.message_id === undefined ||
 				String(callback_info.message_info.reply_to_message?.text || "").length === 0
@@ -71,7 +78,7 @@ class TelegramCallbackqueryHandlers {
 				await this.#instances.telegram.methods.editMessageText(
 					chat_info.id,
 					callback_info.message_info.message_id,
-					`<i>Error: What are you submitting?</i>`,
+					i18n.t(user_info, "error.what_submitting"),
 					opt
 				);
 				return;
@@ -85,7 +92,12 @@ class TelegramCallbackqueryHandlers {
 			const events = this.#instances.events.getLeaderEvents(user_info.username);
 			const evtObj = events.find((v) => v.id === Number(callback_info.value));
 			if (!evtObj) {
-				await this.#instances.telegram.methods.editMessageText(chat_info.id, callback_info.message_info.message_id, `<i>Error: Event not found.</i>`, opt);
+				await this.#instances.telegram.methods.editMessageText(
+					chat_info.id,
+					callback_info.message_info.message_id,
+					i18n.t(user_info, "error.event_not_found"),
+					opt
+				);
 				return;
 			}
 			evtObj.noteMessage(chat_info.id, callback_info.message_info.message_id);
@@ -95,16 +107,16 @@ class TelegramCallbackqueryHandlers {
 				await this.#instances.telegram.methods.editMessageText(
 					chat_info.id,
 					callback_info.message_info.message_id,
-					`<b>✅ Sheet set!</b>\n<i>${evtObj.details.title}</i>`,
+					i18n.t(user_info, "success.sheet_set", { title: evtObj.details.title }),
 					opt
 				);
 			} else {
 				const error =
 					res?.error === "SHEET_ACCESS_DENIED"
-						? `<i>Error: The bot can't access this sheet. Please share it with the service account.</i>`
+						? i18n.t(user_info, "error.sq_access")
 						: res?.error === "SHEET_NOT_FOUND"
-							? `<i>Error: Sheet not found.</i>`
-							: `<b>Failed to set sheet!</b>\nError: ${res?.error || "Internal Error"}`;
+							? i18n.t(user_info, "error.sq_notfound")
+							: i18n.t(user_info, "error.sq_generic", { error: res?.error || i18n.t(user_info, "error.submit_internal") });
 				await this.#instances.telegram.methods.editMessageText(chat_info.id, callback_info.message_info.message_id, error, opt);
 			}
 			return;
@@ -114,6 +126,7 @@ class TelegramCallbackqueryHandlers {
 
 	passcode(chat_info, user_info, callback_info) {
 		setImmediate(async () => {
+			const i18n = this.#instances.i18n;
 			if (
 				callback_info.message_info.reply_to_message?.message_id === undefined ||
 				String(callback_info.message_info.reply_to_message?.text || "").length === 0
@@ -121,7 +134,7 @@ class TelegramCallbackqueryHandlers {
 				await this.#instances.telegram.methods.editMessageText(
 					chat_info.id,
 					callback_info.message_info.message_id,
-					`<i>Error: What are you submitting?</i>`,
+					i18n.t(user_info, "error.what_submitting"),
 					opt
 				);
 				return;
@@ -141,7 +154,12 @@ class TelegramCallbackqueryHandlers {
 				);
 			const evtObj = events.find((v) => v.id === Number(callback_info.value));
 			if (!evtObj) {
-				await this.#instances.telegram.methods.editMessageText(chat_info.id, callback_info.message_info.message_id, `<i>Error: Event not found.</i>`, opt);
+				await this.#instances.telegram.methods.editMessageText(
+					chat_info.id,
+					callback_info.message_info.message_id,
+					i18n.t(user_info, "error.event_not_found"),
+					opt
+				);
 				return;
 			}
 			evtObj.noteMessage(chat_info.id, callback_info.message_info.message_id);
@@ -150,8 +168,7 @@ class TelegramCallbackqueryHandlers {
 			await this.#instances.telegram.methods.editMessageText(
 				chat_info.id,
 				callback_info.message_info.message_id,
-				`<b>✅ Passcode set</b>: <code>${passcode}</code>`,
-				opt
+				i18n.t(user_info, "success.passcode_set", { passcode })
 			);
 			return;
 		});

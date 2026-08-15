@@ -1,0 +1,49 @@
+{
+	"error": {
+		"event_not_found": "<i>Error: Event not found.</i>",
+		"no_event": "<i>Error: No available event.</i>",
+		"what_submitting": "<i>Error: What are you submitting?</i>",
+		"agent_not_found": "Agent not found!",
+		"participate_failed": "Failed to mark as participated.",
+		"submit_failed": "<b>Failed to submit stat!</b>\nError: {{error}}",
+		"submit_internal": "Internal Error",
+		"sq_access": "<i>Error: The bot can't access this sheet. Please grant edit permission to <code>ifs-hk@syncs-be.iam.gserviceaccount.com</code></i>",
+		"sq_notfound": "<i>Error: Sheet not found.</i>",
+		"sq_generic": "<b>Failed to set sheet!</b>\nError: {{error}}",
+		"qr_failed": "<i>Error: Unable to generate QR Code for check-in.</i>",
+		"parse_failed": "Parse failed: {{error}}",
+		"parse_unknown": "Unknown Error",
+		"missing_field": "Missing or empty field: {{field}}",
+		"account_not_match": "Telegram account not match.",
+		"lifetime_ap": "Lifetime AP hasn't been updated since the last submission."
+	},
+	"success": {
+		"checked_in": "<b>✅ Checked in: {{agentName}}</b>",
+		"checked_in_self": "<b>✅ You are checked in!</b>",
+		"submitted": "<b>✅ Submitted end stat!</b>",
+		"submitting": "<i>Submitting, please wait...</i>",
+		"sheet_set": "<b>✅ Sheet set!</b>\n<i>{{title}}</i>",
+		"passcode_set": "<b>✅ Passcode set</b>: <code>{{passcode}}</code>"
+	},
+	"prompt": {
+		"choose_event": "<b>Please choose an event:</b>"
+	},
+	"button": {
+		"cancel": "Cancel"
+	},
+	"new": {
+		"event_added": "IFS Event added: <i>{{title}}</i>",
+		"event_added_test": "IFS Event added: <i>{{title}} ({{id}})</i>",
+		"timezone": "Timezone: <b>{{timezone}}</b>",
+		"accept_from": "Accept stat from <b>{{date}}</b>",
+		"accept_till": "Accept stat till <b>{{date}}</b>",
+		"remind_broadcast": "Remind broadcast <b>{{date}}</b>"
+	},
+	"event": {
+		"ended": "<b>IFS event ended</b>\n<i>{{title}}</i>"
+	},
+	"reminder": {
+		"no_end_stat": "<b>Reminder:</b> Please submit your end stat for <i>{{title}}</i>.",
+		"below_ap": "<b>Reminder:</b> Your lifetime AP gain is below 10,000. Please re-submit your end stat."
+	}
+}

@@ -125,15 +125,16 @@ class EventApp {
 
 	async #destroyExpired(eventID) {
 		if (!this.#events.has(eventID)) return;
-		const details = this.#events.get(eventID).details;
+		const eventObj = this.#events.get(eventID);
+		const details = eventObj.details;
+		const i18n = this.#instances.i18n;
 		this.destroyEvent(eventID);
 		for (const leader of [details.leaderEnl, details.leaderRes]) {
 			if (!leader || !leader.id) continue;
 			try {
-				await this.#instances.telegram?.methods?.sendMessage(leader.id, `<b>IFS event ended</b>\n<i>${details.title}</i>`);
-			} catch (e) {
-				console.error(e);
-			}
+				const text = i18n.translate(i18n.resolveLocale(eventObj.getLanguageCode(leader.id)), "event.ended", { title: details.title });
+				await this.#instances.telegram?.methods?.sendMessage(leader.id, text);				} catch (e) {
+				console.error(e);			}
 		}
 		return;
 	}
@@ -172,22 +173,25 @@ class EventApp {
 	async #broadcastReminder(eventID) {
 		const eventObj = this.#events.get(eventID);
 		if (!eventObj) return;
+		const i18n = this.#instances.i18n;
 		const { noEndStat, notMeeting } = await eventObj.getReminderRecipients();
 		const title = eventObj.details.title;
-		const sendTo = async (recipients, text) => {
+		const sendTo = async (recipients, key) => {
 			await Promise.all(
 				recipients.map(async (userObj) => {
 					try {
+						const locale = i18n.resolveLocale(eventObj.getLanguageCode(userObj.id));
+						const text = i18n.translate(locale, key, { title });
 						const res = await this.#instances.telegram?.methods?.sendMessage(userObj.id, text);
 						if (res?.ok) eventObj.noteMessage(userObj.id, res.result.message_id);
-					} catch (e) {
+						} catch (e) {
 						console.error(e);
-					}
-				})
-			);
-		};
-		if (noEndStat.length) await sendTo(noEndStat, `<b>Reminder:</b> Please submit your end stat for <i>${title}</i>.`);
-		if (notMeeting.length) await sendTo(notMeeting, `<b>Reminder:</b> Your lifetime AP gain is below 10,000. Please re-submit your end stat.`);
+						}
+					})
+				);
+			};
+		if (noEndStat.length) await sendTo(noEndStat, "reminder.no_end_stat");
+		if (notMeeting.length) await sendTo(notMeeting, "reminder.below_ap");
 		await eventObj.broadcastPasscode();
 		return;
 	}

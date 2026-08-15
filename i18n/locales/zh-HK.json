@@ -1,0 +1,49 @@
+{
+	"error": {
+		"event_not_found": "<i>錯誤：找不到活動。</i>",
+		"no_event": "<i>錯誤：沒有進行中活動。</i>",
+		"what_submitting": "<i>錯誤：你在提交什麼？</i>",
+		"agent_not_found": "找不到此人！",
+		"participate_failed": "簽到失敗！",
+		"submit_failed": "<b>提交數據失敗！</b>\n遇到錯誤：{{error}}",
+		"submit_internal": "內部錯誤",
+		"sq_access": "<i>遇到錯誤：系統無法存取此表格。請賦予 <code>ifs-hk@syncs-be.iam.gserviceaccount.com</code> 編輯表格權限。</i>",
+		"sq_notfound": "<i>遇到錯誤：找不到表格。</i>",
+		"sq_generic": "<b>設置表格失敗！</b>\n遇到錯誤：{{error}}",
+		"qr_failed": "<i>遇到錯誤：無法生成簽到二維碼。</i>",
+		"parse_failed": "處理數據時遇到錯誤：{{error}}",
+		"parse_unknown": "未知錯誤",
+		"missing_field": "數據缺失：{{field}}",
+		"account_not_match": "Telegram 帳戶不匹配。",
+		"lifetime_ap": "自上次提交後 AP 未有增加。"
+	},
+	"success": {
+		"checked_in": "<b>✅ 已為 {{agentName}} 簽到</b>",
+		"checked_in_self": "<b>✅ 你已成功簽到！</b>",
+		"submitted": "<b>✅ 已提交結束數據！</b>",
+		"submitting": "<i>正在提交數據，請稍候……</i>",
+		"sheet_set": "<b>✅ 表格已設置！</b>\n<i>{{title}}</i>",
+		"passcode_set": "<b>✅ Passcode 已設置</b>：<code>{{passcode}}</code>"
+	},
+	"prompt": {
+		"choose_event": "<b>請選擇活動：</b>"
+	},
+	"button": {
+		"cancel": "取消"
+	},
+	"new": {
+		"event_added": "IFS 活動已添加：<i>{{title}}</i>",
+		"event_added_test": "IFS 活動已添加：<i>{{title}} ({{id}})</i>",
+		"timezone": "時區：<b>{{timezone}}</b>",
+		"accept_from": "接受數據時間起於 <b>{{date}}</b>",
+		"accept_till": "接受數據時間止於 <b>{{date}}</b>",
+		"remind_broadcast": "提醒廣播 <b>{{date}}</b>"
+	},
+	"event": {
+		"ended": "<b>IFS 活動已結束</b>\n<i>{{title}}</i>"
+	},
+	"reminder": {
+		"no_end_stat": "<b>提醒：</b>請提交 <i>{{title}}</i> 結束數據。",
+		"below_ap": "<b>提醒：</b>你的目前 AP 增長少於 10,000。請重新提交結束數據。"
+	}
+}
