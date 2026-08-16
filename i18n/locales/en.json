@@ -20,7 +20,7 @@
 	"success": {
 		"checked_in": "<b>✅ Checked in: {{agentName}}</b>",
 		"checked_in_self": "<b>✅ You are checked in!</b>",
-		"submitted": "<b>✅ Submitted end stat!</b>",
+		"submitted": "<b>✅ Submitted end stat!</b>\nLevel: <b>{{level}}</b>\nAP: <b>{{ap}}</b>",
 		"submitting": "<i>Submitting, please wait...</i>",
 		"sheet_set": "<b>✅ Sheet set!</b>\n<i>{{title}}</i>",
 		"passcode_set": "<b>✅ Passcode set</b>: <code>{{passcode}}</code>"

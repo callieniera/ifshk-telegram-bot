@@ -359,7 +359,10 @@ class EventHandlers {
 		try {
 			await updateRange(token, this.#opt.sheetID, `'Data'!A${idx}:O${idx}`, [newValue]);
 			void this.#maybeSendPasscode(values, newValue);
-			return true;
+			return {
+				level: newValue[7] - newValue[6] < 0 ? "Recursed" : `+${newValue[7] - newValue[6]}`,
+				ap: `+${newValue[10] - newValue[9]}${newValue[10] - newValue[9] >= 10000 ? " ✅ " : ""}`,
+			};
 		} catch (err) {
 			console.error(err);
 			return false;

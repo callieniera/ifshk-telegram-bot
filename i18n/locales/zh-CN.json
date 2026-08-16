@@ -20,7 +20,7 @@
 	"success": {
 		"checked_in": "<b>✅ 已为 {{agentName}} 签到</b>",
 		"checked_in_self": "<b>✅ 你已成功签到！</b>",
-		"submitted": "<b>✅ 已提交结束数据！</b>",
+		"submitted": "<b>✅ 已提交结束数据！</b>\n等级：{{level}}\nAP：{{ap}}",
 		"submitting": "<i>正在提交数据，请稍候……</i>",
 		"sheet_set": "<b>✅ 表格已设置！</b>\n<i>{{title}}</i>",
 		"passcode_set": "<b>✅ Passcode 已设置</b>：<code>{{passcode}}</code>"
