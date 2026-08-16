@@ -18,12 +18,6 @@ class TelegramCommandHandlers {
 				if (!match) return false;
 				const eventID = Number(match[1]);
 				const agentName = decodeURIComponent(match[2]);
-				const opt = {
-					reply_parameters: {
-						message_id: message_info.message_id,
-						allow_sending_without_reply: true,
-					},
-				};
 				setImmediate(async () => {
 					const i18n = this.#instances.i18n;
 					try {
@@ -34,8 +28,7 @@ class TelegramCommandHandlers {
 						if (res === "Agent not found!" || res === false) {
 							await this.#instances.telegram.methods.sendMessage(
 								chat_info.id,
-								`<i>${res === "Agent not found!" ? i18n.t(user_info, "error.agent_not_found") : i18n.t(user_info, "error.participate_failed")}</i>`,
-								opt
+								`<i>${res === "Agent not found!" ? i18n.t(user_info, "error.agent_not_found") : i18n.t(user_info, "error.participate_failed")}</i>`
 							);
 							return;
 						}
@@ -44,7 +37,7 @@ class TelegramCommandHandlers {
 							this.#instances.telegram.methods.deleteMessage(sent.id, sent.message_id).then((v) => {
 								if (v.ok) evtObj.sentCheckinQrCodeDeleted(agentName);
 							});
-						this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "success.checked_in", { agentName }), opt).then((v) => {
+						this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "success.checked_in", { agentName })).then((v) => {
 							if (v?.ok) evtObj.noteMessage(chat_info.id, v.result.message_id);
 						});
 
@@ -53,7 +46,7 @@ class TelegramCommandHandlers {
 						});
 					} catch (err) {
 						if (err && err.message)
-							this.#instances.telegram.methods.sendMessage(chat_info.id, `<i>${err.toString()}</i>`, opt).then((v) => {
+							this.#instances.telegram.methods.sendMessage(chat_info.id, `<i>${err.toString()}</i>`).then((v) => {
 								if (v?.ok) evtObj?.noteMessage(chat_info.id, v.result.message_id);
 							});
 					}
