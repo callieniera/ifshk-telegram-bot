@@ -29,7 +29,7 @@ class TelegramCommandHandlers {
 					try {
 						const evtObj = this.#instances.events.getLeaderEvents(user_info.username).find((evt) => evt.id === eventID);
 						if (!evtObj) return;
-						evtObj.noteMessage(chat_info.id, message_info.message_id);
+						this.#instances.telegram.methods.deleteMessage(chat_info.id, message_info.message_id);
 						const res = await evtObj.markParticipated(agentName);
 						if (res === "Agent not found!" || res === false) {
 							await this.#instances.telegram.methods.sendMessage(
@@ -40,16 +40,22 @@ class TelegramCommandHandlers {
 							return;
 						}
 						const sent = evtObj.getSentCheckinQrCode(agentName);
-						if (sent && sent.id === user_info.id)
+						if (sent)
 							this.#instances.telegram.methods.deleteMessage(sent.id, sent.message_id).then((v) => {
 								if (v.ok) evtObj.sentCheckinQrCodeDeleted(agentName);
 							});
-						const checkedInRes = await this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "success.checked_in", { agentName }), opt);
-						if (checkedInRes?.ok) evtObj.noteMessage(chat_info.id, checkedInRes.result.message_id);
-						const agentRes = await this.#instances.telegram.methods.sendMessage(sent.id, i18n.t(user_info, "success.checked_in_self"));
-						if (agentRes?.ok) evtObj.noteMessage(sent.id, agentRes.result.message_id);
+						this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "success.checked_in", { agentName }), opt).then((v) => {
+							if (v?.ok) evtObj.noteMessage(chat_info.id, v.result.message_id);
+						});
+
+						this.#instances.telegram.methods.sendMessage(sent.id, i18n.t(user_info, "success.checked_in_self")).then((v) => {
+							if (v?.ok) evtObj.noteMessage(sent.id, v.result.message_id);
+						});
 					} catch (err) {
-						if (err && err.message) this.#instances.telegram.methods.sendMessage(chat_info.id, `<i>${err.toString()}</i>`, opt);
+						if (err && err.message)
+							this.#instances.telegram.methods.sendMessage(chat_info.id, `<i>${err.toString()}</i>`, opt).then((v) => {
+								if (v?.ok) evtObj?.noteMessage(chat_info.id, v.result.message_id);
+							});
 					}
 				});
 			}
