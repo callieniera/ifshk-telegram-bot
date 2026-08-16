@@ -31,10 +31,10 @@ class App {
 		const instances = { server: this.server, onclose: this.#onclosefn };
 		instances.google = new GoogleServiceAccountAuth();
 		instances.onclose.push(() => instances.google.clearCachedToken());
+		instances.i18n = new i18n();
 		const events = new EventApp(instances);
 		instances.events = events;
 		await events.initSync();
-		instances.i18n = new i18n();
 		const telegram = new TelegramApp(instances, {
 			url: this.url,
 			token: process.env.TG_BOT_TOKEN,

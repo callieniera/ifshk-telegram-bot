@@ -40,10 +40,15 @@
 		"remind_broadcast": "Remind broadcast <b>{{date}}</b>"
 	},
 	"event": {
+		"checkin_qrcode": "Please present this QR code to the PoC to check in.",
 		"ended": "<b>IFS event ended</b>\n<i>{{title}}</i>"
 	},
 	"reminder": {
 		"no_end_stat": "<b>Reminder:</b> Please submit your end stat for <i>{{title}}</i>.",
 		"below_ap": "<b>Reminder:</b> Your lifetime AP gain is below 10,000. Please re-submit your end stat."
+	},
+	"passcode": {
+		"message": "Thank you for participating in the <b>{{title}}</b>. Below is the Passcode for this event. Tap the button to copy it, then paste it in the game (Android) or on the <a href='https://intel.ingress.com'>Intel Map</a> to redeem your reward.",
+		"copy_button": "Copy Passcode"
 	}
 }

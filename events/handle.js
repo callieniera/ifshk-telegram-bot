@@ -239,7 +239,7 @@ class EventHandlers {
 		const { ok, values, error } = this.#stringParser(string);
 		if (!ok || error) return i18n.t(user_info, "error.parse_failed", { error: error || i18n.t(user_info, "error.parse_unknown") });
 
-			// Validate required fields
+		// Validate required fields
 		const requiredKeys = ["AgentName", "AgentFaction", "Date(yyyy-mm-dd)", "Time(hh:mm:ss)", "Level", "LifetimeAP", "XMRecharged"];
 		for (const key of requiredKeys) {
 			if (values[key] === undefined || values[key] === "") {
@@ -355,7 +355,7 @@ class EventHandlers {
 			newValue[11] = undefined;
 			newValue[13] = values.xmRecharged;
 			newValue[14] = undefined;
-				} else return i18n.t(user_info, "error.lifetime_ap");
+		} else return i18n.t(user_info, "error.lifetime_ap");
 		try {
 			await updateRange(token, this.#opt.sheetID, `'Data'!A${idx}:O${idx}`, [newValue]);
 			void this.#maybeSendPasscode(values, newValue);
@@ -541,8 +541,11 @@ class EventHandlers {
 				...options,
 			});
 			const file = qrCodeImage.getRawData("png");
+			const i18n = this.#instances.i18n;
 			const message_options = {
 				...opt,
+				caption: i18n.t(user_info, "event.checkin_qrcode"),
+				parse_mode: "html",
 				show_caption_above_media: true,
 				protect_content: true,
 			};
@@ -649,10 +652,23 @@ class EventHandlers {
 
 	async #sendPasscode(recipient) {
 		if (typeof this.#passcode !== "string" || !this.#passcode.length) return;
+		const i18n = this.#instances.i18n;
 		const key = String(recipient.agentName).toLocaleLowerCase();
 		if (this.#sentPasscode.has(key)) return;
 		try {
-			const res = await this.#instances.telegram?.methods?.sendMessage(recipient.id, `<code>${this.#passcode}</code>`);
+			const opt = {
+				protect_content: true,
+				reply_markup: {
+					inline_keyboard: [
+						[{ text: i18n.translate(i18n.resolveLocale(this.getLanguageCode(recipient.id)), "passcode.copy_button"), copy_text: this.#passcode }],
+					],
+				},
+			};
+			const res = await this.#instances.telegram?.methods?.sendMessage(
+				recipient.id,
+				i18n.translate(i18n.resolveLocale(this.getLanguageCode(recipient.id)), "passcode.message", { title: this.#details.title }),
+				opt
+			);
 			if (res?.ok) {
 				this.#sentPasscode.set(key, { id: recipient.id, message_id: res.result.message_id });
 				this.#instances.events?.scheduleSave();

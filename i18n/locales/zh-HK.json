@@ -40,10 +40,15 @@
 		"remind_broadcast": "提醒廣播 <b>{{date}}</b>"
 	},
 	"event": {
+		"checkin_qrcode": "請向活動負責人出示此二維碼完成簽到。",
 		"ended": "<b>IFS 活動已結束</b>\n<i>{{title}}</i>"
 	},
 	"reminder": {
 		"no_end_stat": "<b>提醒：</b>請提交 <i>{{title}}</i> 結束數據。",
 		"below_ap": "<b>提醒：</b>你的目前 AP 增長少於 10,000。請重新提交結束數據。"
+	},
+	"passcode": {
+		"message": "感謝你參與 <b>{{title}}</b> 活動。以下為本次活動的 Passcode ，你可點擊按鈕複製，並在遊戲內 (Android) 或 <a href='https://intel.ingress.com'>Intel Map</a> 貼上獲得獎勵。",
+		"copy_button": "複製 Passcode"
 	}
 }

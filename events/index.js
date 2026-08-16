@@ -133,8 +133,10 @@ class EventApp {
 			if (!leader || !leader.id) continue;
 			try {
 				const text = i18n.translate(i18n.resolveLocale(eventObj.getLanguageCode(leader.id)), "event.ended", { title: details.title });
-				await this.#instances.telegram?.methods?.sendMessage(leader.id, text);				} catch (e) {
-				console.error(e);			}
+				await this.#instances.telegram?.methods?.sendMessage(leader.id, text);
+			} catch (e) {
+				console.error(e);
+			}
 		}
 		return;
 	}
@@ -184,12 +186,12 @@ class EventApp {
 						const text = i18n.translate(locale, key, { title });
 						const res = await this.#instances.telegram?.methods?.sendMessage(userObj.id, text);
 						if (res?.ok) eventObj.noteMessage(userObj.id, res.result.message_id);
-						} catch (e) {
+					} catch (e) {
 						console.error(e);
-						}
-					})
-				);
-			};
+					}
+				})
+			);
+		};
 		if (noEndStat.length) await sendTo(noEndStat, "reminder.no_end_stat");
 		if (notMeeting.length) await sendTo(notMeeting, "reminder.below_ap");
 		await eventObj.broadcastPasscode();
@@ -228,7 +230,7 @@ class EventApp {
 			this.#events.delete(eventID);
 			this.scheduleSave();
 			void this.#deleteEventMessages(eventObj);
-			}
+		}
 		return;
 	}
 

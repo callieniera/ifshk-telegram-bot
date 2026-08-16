@@ -1,49 +1,54 @@
 {
 	"error": {
 		"event_not_found": "<i>错误：找不到活动。</i>",
-			"no_event": "<i>错误：没有进行中活动。</i>",
-			"what_submitting": "<i>错误：你在提交什么？</i>",
-			"agent_not_found": "找不到此人！",
-			"participate_failed": "签到失败！",
-			"submit_failed": "<b>提交数据失败！</b>\n遇到错误：{{error}}",
-			"submit_internal": "内部错误",
-			"sq_access": "<i>遇到错误：系统无法访问此表格。请赋予 <code>ifs-hk@syncs-be.iam.gserviceaccount.com</code> 编辑表格权限。</i>",
-			"sq_notfound": "<i>错误：找不到表格。</i>",
-			"sq_generic": "<b>设置表格失败！</b>\n遇到错误：{{error}}",
-			"qr_failed": "<i>遇到错误：无法生成签到二维码。</i>",
-			"parse_failed": "处理数据时遇到错误：{{error}}",
-			"parse_unknown": "未知错误",
-			"missing_field": "数据缺失：{{field}}",
-			"account_not_match": "Telegram 账户不匹配。",
-			"lifetime_ap": "自上次提交后 AP 未有增加。"
+		"no_event": "<i>错误：没有进行中活动。</i>",
+		"what_submitting": "<i>错误：你在提交什么？</i>",
+		"agent_not_found": "找不到此人！",
+		"participate_failed": "签到失败！",
+		"submit_failed": "<b>提交数据失败！</b>\n遇到错误：{{error}}",
+		"submit_internal": "内部错误",
+		"sq_access": "<i>遇到错误：系统无法访问此表格。请赋予 <code>ifs-hk@syncs-be.iam.gserviceaccount.com</code> 编辑表格权限。</i>",
+		"sq_notfound": "<i>错误：找不到表格。</i>",
+		"sq_generic": "<b>设置表格失败！</b>\n遇到错误：{{error}}",
+		"qr_failed": "<i>遇到错误：无法生成签到二维码。</i>",
+		"parse_failed": "处理数据时遇到错误：{{error}}",
+		"parse_unknown": "未知错误",
+		"missing_field": "数据缺失：{{field}}",
+		"account_not_match": "Telegram 账户不匹配。",
+		"lifetime_ap": "自上次提交后 AP 未有增加。"
 	},
 	"success": {
-			"checked_in": "<b>✅ 已为 {{agentName}} 签到</b>",
-			"checked_in_self": "<b>✅ 你已成功签到！</b>",
-			"submitted": "<b>✅ 已提交结束数据！</b>",
-			"submitting": "<i>正在提交数据，请稍候……</i>",
-			"sheet_set": "<b>✅ 表格已设置！</b>\n<i>{{title}}</i>",
-			"passcode_set": "<b>✅ Passcode 已设置</b>：<code>{{passcode}}</code>"
+		"checked_in": "<b>✅ 已为 {{agentName}} 签到</b>",
+		"checked_in_self": "<b>✅ 你已成功签到！</b>",
+		"submitted": "<b>✅ 已提交结束数据！</b>",
+		"submitting": "<i>正在提交数据，请稍候……</i>",
+		"sheet_set": "<b>✅ 表格已设置！</b>\n<i>{{title}}</i>",
+		"passcode_set": "<b>✅ Passcode 已设置</b>：<code>{{passcode}}</code>"
 	},
 	"prompt": {
-			"choose_event": "<b>请选择活动：</b>"
+		"choose_event": "<b>请选择活动：</b>"
 	},
 	"button": {
-			"cancel": "取消"
+		"cancel": "取消"
 	},
 	"new": {
-			"event_added": "IFS 活动已添加：<i>{{title}}</i>",
-			"event_added_test": "IFS 活动已添加：<i>{{title}} ({{id}})</i>",
-			"timezone": "时区：<b>{{timezone}}</b>",
-			"accept_from": "接受数据时间起于 <b>{{date}}</b>",
-			"accept_till": "接受数据时间止于 <b>{{date}}</b>",
-			"remind_broadcast": "提醒广播 <b>{{date}}</b>"
+		"event_added": "IFS 活动已添加：<i>{{title}}</i>",
+		"event_added_test": "IFS 活动已添加：<i>{{title}} ({{id}})</i>",
+		"timezone": "时区：<b>{{timezone}}</b>",
+		"accept_from": "接受数据时间起于 <b>{{date}}</b>",
+		"accept_till": "接受数据时间止于 <b>{{date}}</b>",
+		"remind_broadcast": "提醒广播 <b>{{date}}</b>"
 	},
 	"event": {
-			"ended": "<b>IFS 活动已结束</b>\n<i>{{title}}</i>"
+		"checkin_qrcode": "请向活动负责人出示此二维码完成签到。",
+		"ended": "<b>IFS 活动已结束</b>\n<i>{{title}}</i>"
 	},
 	"reminder": {
-			"no_end_stat": "<b>提醒：</b>请提交 <i>{{title}}</i> 结束数据。",
-			"below_ap": "<b>提醒：</b>你的目前 AP 增长少于 10,000。请重新提交结束数据。"
+		"no_end_stat": "<b>提醒：</b>请提交 <i>{{title}}</i> 结束数据。",
+		"below_ap": "<b>提醒：</b>你的目前 AP 增长少于 10,000。请重新提交结束数据。"
+	},
+	"passcode": {
+		"message": "感谢您参与 <b>{{title}}</b> 活动。以下为本次活动的 Passcode，您可点击按钮复制，并在游戏内（Android）或 <a href='https://intel.ingress.com'>Intel Map</a> 上粘贴以获取奖励。",
+		"copy_button": "复制 Passcode"
 	}
 }
