@@ -27,11 +27,8 @@ class TelegramCommandHandlers {
 				setImmediate(async () => {
 					const i18n = this.#instances.i18n;
 					try {
-						const evtObj = this.#instances.events.getEvent(eventID);
-						if (!evtObj) {
-							await this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "error.event_not_found"), opt);
-							return;
-						}
+						const evtObj = this.#instances.events.getLeaderEvents(user_info.username).find((evt) => evt.id === eventID);
+						if (!evtObj) return;
 						evtObj.noteMessage(chat_info.id, message_info.message_id);
 						const res = await evtObj.markParticipated(agentName);
 						if (res === "Agent not found!" || res === false) {
