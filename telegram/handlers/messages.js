@@ -23,11 +23,15 @@ class TelegramMessagesHandlers {
 				const evtObj = events[0];
 				evtObj.noteMessage(chat_info.id, message_info.message_id);
 				const serviceMsg = await this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "success.submitting"), opt);
+				evtObj.noteMessage(chat_info.id, serviceMsg.result.message_id);
 				const submitRes = await evtObj.submit(String(message_info.content), user_info);
 				if (!submitRes || typeof submitRes === "string") {
 					const text = i18n.t(user_info, "error.submit_failed", { error: submitRes || i18n.t(user_info, "error.submit_internal") });
 					if (serviceMsg.ok) this.#instances.telegram.methods.editMessageText(chat_info.id, serviceMsg.result.message_id, text);
-					else this.#instances.telegram.methods.sendMessage(chat_info.id, text, opt);
+					else
+						this.#instances.telegram.methods.sendMessage(chat_info.id, text, opt).then((v) => {
+							if (v.ok) evtObj.noteMessage(chat_info.id, v.result.message_id);
+						});
 					return;
 				}
 				if (typeof submitRes === "object" && submitRes.agentName && submitRes.agentFaction) {
@@ -36,7 +40,10 @@ class TelegramMessagesHandlers {
 				} else {
 					const submitted = i18n.t(user_info, "success.submitted", { level: submitRes.level, ap: submitRes.ap });
 					if (serviceMsg.ok) await this.#instances.telegram.methods.editMessageText(chat_info.id, serviceMsg.result.message_id, submitted, opt);
-					else await this.#instances.telegram.methods.sendMessage(chat_info.id, submitted, opt);
+					else
+						await this.#instances.telegram.methods.sendMessage(chat_info.id, submitted, opt).then((v) => {
+							if (v.ok) evtObj.noteMessage(chat_info.id, v.result.message_id);
+						});
 				}
 				return;
 			} else if (events.length > 1) {
@@ -44,7 +51,9 @@ class TelegramMessagesHandlers {
 				for (const evtObj of events) inline_keyboard.push([{ text: evtObj.details.title, callback_data: `stat_${evtObj.id}` }]);
 				inline_keyboard.push([{ text: i18n.t(user_info, "button.cancel"), style: "danger", callback_data: "close" }]);
 				opt.reply_markup = { inline_keyboard };
-				await this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "prompt.choose_event"), opt);
+				await this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "prompt.choose_event"), opt).then((v) => {
+					if (v.ok) evtObj.noteMessage(chat_info.id, v.result.message_id);
+				});
 			}
 		});
 		return false;

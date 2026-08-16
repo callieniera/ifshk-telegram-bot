@@ -15,7 +15,8 @@
 		"parse_unknown": "未知錯誤",
 		"missing_field": "數據缺失：{{field}}",
 		"account_not_match": "Telegram 帳戶不匹配。",
-		"lifetime_ap": "自上次提交後 AP 未有增加。"
+		"lifetime_ap": "自上次提交後 AP 未有增加。",
+		"stat_stale": "請重新複製遊戲數據，並儘快提交。"
 	},
 	"success": {
 		"checked_in": "<b>✅ 已為 {{agentName}} 簽到</b>",
@@ -40,7 +41,7 @@
 		"remind_broadcast": "提醒廣播 <b>{{date}}</b>"
 	},
 	"event": {
-		"checkin_qrcode": "請向活動負責人出示此二維碼完成簽到。",
+		"checkin_qrcode": "<b>請向活動負責人出示此二維碼完成簽到。</b>",
 		"ended": "<b>IFS 活動已結束</b>\n<i>{{title}}</i>"
 	},
 	"reminder": {

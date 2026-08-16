@@ -45,14 +45,6 @@ class I18n {
 		return;
 	}
 
-	// Escape user-supplied values that get interpolated into HTML (parse_mode = "HTML").
-	#escape(value) {
-		return String(value ?? "")
-			.replace(/&/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;");
-	}
-
 	// Normalize a raw language_code / user_info to a catalog locale key.
 	resolveLocale(languageCode) {
 		if (!languageCode) return this.#default;
@@ -89,7 +81,7 @@ class I18n {
 			return key;
 		}
 		if (typeof value !== "string") return String(value);
-		return value.replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (match, name) => (name in vars ? this.#escape(vars[name]) : match));
+		return value.replace(/\{\{\s*([\w.-]+)\s*\}\}/g, (match, name) => (name in vars ? vars[name] : match));
 	}
 
 	// Convenience for handlers: resolve locale from user_info.language_code, then translate.

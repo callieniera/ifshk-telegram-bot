@@ -15,7 +15,8 @@
 		"parse_unknown": "Unknown Error",
 		"missing_field": "Missing or empty field: {{field}}",
 		"account_not_match": "Telegram account not match.",
-		"lifetime_ap": "Lifetime AP hasn't been updated since the last submission."
+		"lifetime_ap": "Lifetime AP hasn't been updated since the last submission.",
+		"stat_stale": "<i>Please copy your stat from the game again and submit it immediately.</i>"
 	},
 	"success": {
 		"checked_in": "<b>✅ Checked in: {{agentName}}</b>",
@@ -40,7 +41,7 @@
 		"remind_broadcast": "Remind broadcast <b>{{date}}</b>"
 	},
 	"event": {
-		"checkin_qrcode": "Please present this QR code to the PoC to check in.",
+		"checkin_qrcode": "<b>Please present this QR code to the PoC to check in.</b>",
 		"ended": "<b>IFS event ended</b>\n<i>{{title}}</i>"
 	},
 	"reminder": {

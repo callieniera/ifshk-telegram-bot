@@ -246,11 +246,11 @@ class EventHandlers {
 				return i18n.t(user_info, "error.missing_field", { field: key });
 			}
 		}
-		if (this.#opt.isTest && !this.#opt.sheetID) return true;
 		const agentName = String(values["AgentName"]);
 		const agentFaction = String(values["AgentFaction"]);
 		const dateStr = String(values["Date(yyyy-mm-dd)"]);
 		const timeStr = String(values["Time(hh:mm:ss)"]);
+		if (!this.#isStatFresh(dateStr, timeStr)) return i18n.t(user_info, "error.stat_stale");
 		const level = Number(values["Level"]);
 		const lifetimeAP = Number(values["LifetimeAP"]);
 		const xmRecharged = Number(values["XMRecharged"]);
@@ -549,8 +549,8 @@ class EventHandlers {
 				...opt,
 				caption: i18n.t(user_info, "event.checkin_qrcode"),
 				parse_mode: "html",
-				show_caption_above_media: true,
-				protect_content: true,
+				show_caption_above_media: "true",
+				protect_content: "true",
 			};
 			await this.#instances.telegram.methods.sendChatAction(user_info.id, "upload_photo");
 			const tg_res = await this.#instances.telegram.methods.sendPhotoFile(user_info.id, await file, "qrcode.png", message_options);
@@ -613,6 +613,25 @@ class EventHandlers {
 			}
 		}
 		return { noEndStat, notMeeting };
+	}
+
+	#isStatFresh(dateStr, timeStr) {
+		const timezone = this.#details?.timezone;
+		if (!timezone) return false;
+		const m = String(timezone).match(/([+-])(\d+)/);
+		if (!m) return false;
+		const offset = m[1] === "+" ? -Number(m[2]) : Number(m[2]);
+		const parts = String(dateStr).split("-").map(Number);
+		if (!parts.length) return false;
+		const [y, mo, d] = parts;
+		if ([y, mo, d].some((v) => Number.isNaN(v))) return false;
+		const tparts = String(timeStr).split(":").map(Number);
+		const [h, mi, s] = tparts;
+		if (Number.isNaN(h) || Number.isNaN(mi)) return false;
+		const localMs = Date.UTC(y, mo - 1, d, h, mi || 0, s || 0);
+		const statTime = localMs + offset * 3600 * 1000;
+		const diffMin = (Date.now() - statTime) / 60000;
+		return diffMin <= 5 && diffMin >= -1;
 	}
 
 	#rowQualifiesForPasscode(row) {
