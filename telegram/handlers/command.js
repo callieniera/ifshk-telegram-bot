@@ -121,7 +121,7 @@ class TelegramCommandHandlers {
 	}
 
 	async test(chat_info, user_info, message_info) {
-		if (chat_info.id !== user_info.id) return;
+		if (chat_info.id !== user_info.id || !this.#instances.telegram.utils.isGlobalAdmin(user_info)) return false;
 		const eventOpt = {
 			isTest: {
 				username: user_info.username,

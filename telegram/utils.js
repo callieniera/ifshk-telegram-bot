@@ -1,8 +1,14 @@
 class TelegramUtils {
 	constructor(ins) {
 		this.#instances = ins;
+		if (process.env.GLOBAL_ADMIN_IDS) this.#globalAdmin = new Set(JSON.parse(process.env.GLOBAL_ADMIN_IDS));
 	}
 	#instances;
+
+	#globalAdmin = new Set();
+	isGlobalAdmin(user_info) {
+		return this.#globalAdmin.has(user_info.id);
+	}
 
 	chat_info(json) {
 		const t = "type";
