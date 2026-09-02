@@ -709,9 +709,9 @@ class EventHandlers {
 
 	async #maybeSendPasscode(values, row) {
 		try {
-			const end = this.#details?.passcodeEndTime;
+			const end = this.#details?.restockTime;
 			if (!end) return;
-			// Only after the passcode window has opened (event ended but not yet destroyed).
+			// Only after the restock window has started (event ended but not yet destroyed).
 			if (Date.now() < new Date(end).getTime()) return;
 			if (typeof this.#passcode !== "string" || !this.#passcode.length) return;
 			if (!this.#rowQualifiesForPasscode(row)) return;
