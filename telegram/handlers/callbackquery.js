@@ -52,16 +52,23 @@ class TelegramCallbackqueryHandlers {
 			if (!submitRes || typeof submitRes === "string") {
 				const text = i18n.t(user_info, "error.submit_failed", { error: submitRes || i18n.t(user_info, "error.submit_internal") });
 				if (serviceMsg.ok) this.#instances.telegram.methods.editMessageText(chat_info.id, serviceMsg.result.message_id, text);
-				else this.#instances.telegram.methods.sendMessage(chat_info.id, text, opt);
+				else
+					this.#instances.telegram.methods.sendMessage(chat_info.id, text, opt).then((v) => {
+						if (v.ok) evtObj.noteMessage(chat_info.id, v.result.message_id);
+					});
 				return;
 			}
-			if (typeof submitRes === "object") {
+			if (typeof submitRes === "object" && submitRes.agentName && submitRes.agentFaction) {
 				if (serviceMsg.ok) this.#instances.telegram.methods.deleteMessage(chat_info.id, serviceMsg.result.message_id);
 				await evtObj.sendCheckinQRCode(user_info, submitRes, opt);
 			} else {
-				const submitted = i18n.t(user_info, "success.submitted");
+				const submitted = i18n.t(user_info, "success.submitted", { level: submitRes.level, ap: submitRes.ap });
+
 				if (serviceMsg.ok) await this.#instances.telegram.methods.editMessageText(chat_info.id, serviceMsg.result.message_id, submitted, opt);
-				else await this.#instances.telegram.methods.sendMessage(chat_info.id, submitted, opt);
+				else
+					await this.#instances.telegram.methods.sendMessage(chat_info.id, submitted, opt).then((v) => {
+						if (v.ok) evtObj.noteMessage(chat_info.id, v.result.message_id);
+					});
 			}
 			return;
 		});

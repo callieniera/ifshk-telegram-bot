@@ -33,22 +33,23 @@ class TelegramCommandHandlers {
 							return;
 						}
 						const sent = evtObj.getSentCheckinQrCode(agentName);
-						if (sent)
+						if (sent) {
 							this.#instances.telegram.methods.deleteMessage(sent.id, sent.message_id).then((v) => {
 								if (v.ok) evtObj.sentCheckinQrCodeDeleted(agentName);
 							});
-						this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "success.checked_in", { agentName })).then((v) => {
-							if (v?.ok) evtObj.noteMessage(chat_info.id, v.result.message_id);
-						});
-
-						this.#instances.telegram.methods.sendMessage(sent.id, i18n.t(user_info, "success.checked_in_self")).then((v) => {
-							if (v?.ok) evtObj.noteMessage(sent.id, v.result.message_id);
-						});
-					} catch (err) {
-						if (err && err.message)
-							this.#instances.telegram.methods.sendMessage(chat_info.id, `<i>${err.toString()}</i>`).then((v) => {
-								if (v?.ok) evtObj?.noteMessage(chat_info.id, v.result.message_id);
+							this.#instances.telegram.methods.sendMessage(sent.id, i18n.t(user_info, "success.checked_in_self")).then((v) => {
+								if (v?.ok) evtObj.noteMessage(sent.id, v.result.message_id);
 							});
+							this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "success.checked_in", { agentName })).then((v) => {
+								if (v?.ok) evtObj.noteMessage(chat_info.id, v.result.message_id);
+							});
+						} else
+							this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "success.checked_in_failed", { agentName })).then((v) => {
+								if (v?.ok) evtObj.noteMessage(chat_info.id, v.result.message_id);
+							});
+					} catch (err) {
+						console.error(err);
+						if (err && err.message) this.#instances.telegram.methods.sendMessage(chat_info.id, `<i>${err.toString()}</i>`);
 					}
 				});
 			}

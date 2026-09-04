@@ -680,9 +680,10 @@ class EventHandlers {
 		try {
 			const opt = {
 				protect_content: true,
+				link_preview_options: { is_disabled: true },
 				reply_markup: {
 					inline_keyboard: [
-						[{ text: i18n.translate(i18n.resolveLocale(this.getLanguageCode(recipient.id)), "passcode.copy_button"), copy_text: this.#passcode }],
+						[{ text: i18n.translate(i18n.resolveLocale(this.getLanguageCode(recipient.id)), "passcode.copy_button"), copy_text: { text: this.#passcode } }],
 					],
 				},
 			};

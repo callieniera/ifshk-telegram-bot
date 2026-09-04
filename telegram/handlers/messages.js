@@ -51,9 +51,7 @@ class TelegramMessagesHandlers {
 				for (const evtObj of events) inline_keyboard.push([{ text: evtObj.details.title, callback_data: `stat_${evtObj.id}` }]);
 				inline_keyboard.push([{ text: i18n.t(user_info, "button.cancel"), style: "danger", callback_data: "close" }]);
 				opt.reply_markup = { inline_keyboard };
-				await this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "prompt.choose_event"), opt).then((v) => {
-					if (v.ok) evtObj.noteMessage(chat_info.id, v.result.message_id);
-				});
+				await this.#instances.telegram.methods.sendMessage(chat_info.id, i18n.t(user_info, "prompt.choose_event"), opt);
 			}
 		});
 		return false;

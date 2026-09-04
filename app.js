@@ -44,7 +44,7 @@ class App {
 		await telegram.initedSync();
 		instances.telegram = telegram;
 		await this.server.listen({ port: Number(this.port), host: "0.0.0.0" });
-		functions.console("appstart", "Entities App Listening on Port:", this.port);
+		functions.console("appstart", "IFS App Listening on Port:", this.port);
 		return;
 	}
 
