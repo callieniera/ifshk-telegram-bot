@@ -212,7 +212,7 @@ class EventApp {
 		for (const eventObj of this.#events.values())
 			if (
 				eventObj.sheetID &&
-				eventObj.details.passcodeStartTime < now &&
+				now > new Date(eventObj.details.passcodeStartTime.getTime() - (eventObj.isTest ? 0 : 60 * 60 * 1000)) &&
 				now < new Date(eventObj.details.passcodeEndTime.getTime() + (eventObj.isTest ? 15 * 60 * 1000 : 2 * 60 * 60 * 1000))
 			)
 				events.push(eventObj);
