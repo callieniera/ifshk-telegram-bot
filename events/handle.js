@@ -654,9 +654,9 @@ class EventHandlers {
 	}
 
 	#rowQualifiesForPasscode(row) {
-		// Column C (idx 2) must be a numeric id
-		const id = Number(row[2]);
-		if (!id || Number.isNaN(id)) return false;
+		// Column C (idx 2) must be a non-empty id (numeric Telegram id or HTTP uuid).
+		const id = row[2];
+		if (id === "" || id == null || String(id).trim() === "") return false;
 		// Column A (idx 0) must be TRUE (participated)
 		const a = row[0];
 		if (a !== "TRUE" && a !== "true" && a !== true) return false;
@@ -691,6 +691,26 @@ class EventHandlers {
 			recipients.push({ id: Number(row[2]), agentName: row[4] });
 		}
 		return recipients;
+	}
+
+	// Return the event passcode for a specific identity (column C), or null if the row
+	// does not exist / does not qualify / the passcode is not set. Used by the HTTP
+	// passcode endpoint for uuid (non-numeric) identities.
+	async getPasscodeById(id) {
+		await this.initSync();
+		if (typeof this.#passcode !== "string" || !this.#passcode.length) return null;
+		if (!this.#opt.sheetID) return null;
+		const target = String(id).trim();
+		if (!target.length) return null;
+		const token = await this.#instances.google.getServiceAccountToken();
+		const rows = await getRange(token, this.#opt.sheetID, "'Data'!A:O");
+		rows.splice(0, 1);
+		for (const row of rows) {
+			if (String(row[2]).trim() !== target) continue;
+			if (!this.#rowQualifiesForPasscode(row)) return null;
+			return this.#passcode;
+		}
+		return null;
 	}
 
 	async #sendPasscode(recipient) {
@@ -737,6 +757,9 @@ class EventHandlers {
 			if (Date.now() < new Date(end).getTime()) return;
 			if (typeof this.#passcode !== "string" || !this.#passcode.length) return;
 			if (!this.#rowQualifiesForPasscode(row)) return;
+			// Non-numeric ids are HTTP (uuid) users; they pull the passcode via the GET
+			// endpoint instead of receiving a (invalid) Telegram push.
+			if (!Number.isInteger(values.id)) return;
 			void this.#sendPasscode({ id: values.id, agentName: values.agentName });
 		} catch (e) {
 			console.error(e);

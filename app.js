@@ -4,6 +4,7 @@ dotenv.config({ quiet: true });
 import { classes, functions } from "./helpers/index.js";
 import TelegramApp from "./telegram/index.js";
 import EventApp from "./events/index.js";
+import HTTPApps from "./http/index.js";
 import i18n from "./i18n/index.js";
 
 const { GoogleServiceAccountAuth } = classes;
@@ -35,6 +36,7 @@ class App {
 		const events = new EventApp(instances);
 		instances.events = events;
 		await events.initSync();
+		instances.http = new HTTPApps(instances);
 		const telegram = new TelegramApp(instances, {
 			url: this.url,
 			token: process.env.TG_BOT_TOKEN,
