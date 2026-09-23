@@ -25,8 +25,8 @@ class HTTPGetHandler {
 			const evtObj = this.#instances.events.getEvent(eventId);
 			if (!evtObj) return reply.code(404).send({ ok: false, error: "event_not_found" });
 
-			const auth = request.headers?.authorization;
-			const rawToken = auth && auth.startsWith("Bearer ") ? auth.slice(7).trim() : null;
+			// Verify the identity token carried in the request cookie.
+			const rawToken = this.#instances.http.token.readCookie(request);
 			const verified = rawToken ? this.#instances.http.token.verify(rawToken) : null;
 			if (!verified) return reply.code(401).send({ ok: false, error: "unauthorized" });
 

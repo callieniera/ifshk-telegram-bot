@@ -18,6 +18,9 @@ class HTTPToken {
 
 	#HEADER = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
 
+	// Cookie name used to carry the identity token to/from the client.
+	#COOKIE_NAME = "ifs_token";
+
 	// Derive a stable HMAC key from the bot token (never store the raw token in the token).
 	#key = (() => crypto.createHash("sha256").update(String(process.env.TG_BOT_TOKEN)).digest())();
 
@@ -67,6 +70,29 @@ class HTTPToken {
 		}
 		if (!payload || typeof payload.sub !== "string" || !payload.sub.length) return null;
 		return { id: payload.sub, languageCode: payload.lang };
+	}
+
+	// Read the identity token from a request's `cookie` header (null if absent).
+	readCookie(request) {
+		const cookieHeader = request?.headers?.cookie;
+		if (!cookieHeader) return null;
+		for (const part of String(cookieHeader).split(";")) {
+			const eq = part.indexOf("=");
+			if (eq === -1) continue;
+			const name = part.slice(0, eq).trim();
+			if (name !== this.#COOKIE_NAME) continue;
+			return decodeURIComponent(part.slice(eq + 1).trim());
+		}
+		return null;
+	}
+
+	// Store the token on the reply as an HttpOnly + Secure cookie.
+	// SameSite=None lets a cross-origin web client send the cookie back; switch to
+	// "Lax"/"Strict" if the API and the client share the same origin.
+	setCookieHeader(reply, token, { sameSite = "None" } = {}) {
+		const flags = ["Path=/", "HttpOnly", "Secure", sameSite ? `SameSite=${sameSite}` : ""].filter(Boolean).join("; ");
+		reply.header("set-cookie", `${this.#COOKIE_NAME}=${encodeURIComponent(String(token))}; ${flags}`);
+		return reply;
 	}
 }
 

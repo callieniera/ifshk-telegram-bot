@@ -16,30 +16,27 @@ class HTTPPostHandler {
 			const stat = request.body?.stat;
 			if (typeof stat !== "string" || !stat.trim().length) return reply.code(400).send({ ok: false, error: "stat_required" });
 
-			// Resolve the submitting identity.
-			const auth = request.headers?.authorization;
-			const rawToken = auth && auth.startsWith("Bearer ") ? auth.slice(7).trim() : null;
+			// Resolve the submitting identity from the token cookie.
+			const rawToken = this.#instances.http.token.readCookie(request);
 			let user_info;
-			let issuedToken = null;
 			if (rawToken) {
 				const verified = this.#instances.http.token.verify(rawToken);
 				if (!verified) return reply.code(401).send({ ok: false, error: "unauthorized" });
 				user_info = { id: verified.id, language_code: verified.languageCode };
 			} else {
-				// First submission: no user_info yet — mint a uuid token for the caller.
+				// First submission: no token cookie yet — mint a uuid token for the caller and
+				// hand it back as an HttpOnly + Secure cookie.
 				const languageCode = this.#firstLanguage(request.headers);
 				const issued = this.#instances.http.token.issue(languageCode);
 				user_info = { id: issued.id, language_code: issued.languageCode };
-				issuedToken = issued.token;
+				this.#instances.http.token.setCookieHeader(reply, issued.token);
 			}
 
 			const res = await evtObj.submit(String(stat), user_info);
 
 			// Success: submit() returns an object.  Failure: it returns a string / undefined.
 			if (res && typeof res === "object") {
-				const payload = { ok: true, result: res };
-				if (issuedToken) payload.token = issuedToken;
-				return reply.code(200).send(payload);
+				return reply.code(200).send({ ok: true, result: res });
 			}
 
 			const error = typeof res === "string" ? res : i18n.t(user_info, "error.submit_internal");
