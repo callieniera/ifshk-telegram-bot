@@ -535,32 +535,51 @@ class EventHandlers {
 		return result;
 	}
 
+	// Build the qr-code-styling options for an event check-in QR. Shared by the
+	// Telegram photo path (getRawData -> Buffer) and the web data-URL path so both
+	// render an identical QR (same dimensions, colors, and deep link).
+	#qrOptions(agentName, agentFaction) {
+		const faction = String(agentFaction || "unknown").toLocaleLowerCase();
+		return {
+			width: 1080,
+			height: 1080,
+			data: `https://t.me/${process.env.TG_BOT_USERNAME}?start=checkin-${this.#opt.eventID}-${agentName}`,
+			dotsOptions: {
+				color: faction.includes("enl") ? "#19c37d" : faction.includes("res") ? "#0b5a7a" : "#ffffff",
+				type: "extra-rounded",
+			},
+			backgroundOptions: {
+				color: "#000000",
+			},
+			imageOptions: {
+				saveAsBlob: true,
+				crossOrigin: "anonymous",
+				margin: 10,
+				imageSize: 0.6,
+			},
+			margin: 54,
+		};
+	}
+
+	// Generate the check-in QR as a self-contained data:image/png;base64 URL for the
+	// web client to render in an <img>. Mirrors sendCheckinQRCode (same options via
+	// #qrOptions) but returns a data URL instead of a Buffer for Telegram.
+	async getCheckinQrDataUrl(agentName, agentFaction) {
+		const qrCodeImage = new QRCodeStyling({
+			jsdom: JSDOM, // this is required
+			nodeCanvas, // this is required,
+			...this.#qrOptions(agentName, agentFaction),
+		});
+		const buffer = await qrCodeImage.getRawData("png");
+		return `data:image/png;base64,${Buffer.from(buffer).toString("base64")}`;
+	}
+
 	async sendCheckinQRCode(user_info, { agentName, agentFaction }, opt) {
 		try {
-			const faction = String(agentFaction || "unknown").toLocaleLowerCase();
-			const options = {
-				width: 1080,
-				height: 1080,
-				data: `https://t.me/${process.env.TG_BOT_USERNAME}?start=checkin-${this.#opt.eventID}-${agentName}`,
-				dotsOptions: {
-					color: faction.includes("enl") ? "#19c37d" : faction.includes("res") ? "#0b5a7a" : "#ffffff",
-					type: "extra-rounded",
-				},
-				backgroundOptions: {
-					color: "#000000",
-				},
-				imageOptions: {
-					saveAsBlob: true,
-					crossOrigin: "anonymous",
-					margin: 10,
-					imageSize: 0.6,
-				},
-				margin: 54,
-			};
 			const qrCodeImage = new QRCodeStyling({
 				jsdom: JSDOM, // this is required
 				nodeCanvas, // this is required,
-				...options,
+				...this.#qrOptions(agentName, agentFaction),
 			});
 			const file = qrCodeImage.getRawData("png");
 			const i18n = this.#instances.i18n;
@@ -711,6 +730,37 @@ class EventHandlers {
 			return this.#passcode;
 		}
 		return null;
+	}
+
+	// Return the check-in / requirement status of an identity (column C) for the web
+	// client. `checkedIn` mirrors markParticipated (column A === TRUE); `qualifies`
+	// reuses #rowQualifiesForPasscode (checked in + AP gain >= 10,000); `apGained` is
+	// the end-lifetime AP minus the start-lifetime AP (K - J), or null when the AP
+	// columns are not yet filled. Used by GET /api/events/:eventId/status.
+	async getUserStatus(id) {
+		const none = { agentName: null, agentFaction: null, checkedIn: false, qualifies: false, apGained: null };
+		await this.initSync();
+		if (!this.#opt.sheetID) return none;
+		const target = String(id).trim();
+		if (!target.length) return none;
+		const token = await this.#instances.google.getServiceAccountToken();
+		const rows = await getRange(token, this.#opt.sheetID, "'Data'!A:O");
+		rows.splice(0, 1);
+		for (const row of rows) {
+			if (String(row[2]).trim() !== target) continue;
+			const checkedIn = row[0] === "TRUE" || row[0] === "true" || row[0] === true;
+			const j = row[9];
+			const k = row[10];
+			const apGained = j === "" || j == null || k === "" || k == null || Number.isNaN(Number(k)) || Number.isNaN(Number(j)) ? null : Number(k) - Number(j);
+			return {
+				agentName: String(row[4]),
+				agentFaction: String(row[5]),
+				checkedIn,
+				qualifies: this.#rowQualifiesForPasscode(row),
+				apGained,
+			};
+		}
+		return none;
 	}
 
 	async #sendPasscode(recipient) {

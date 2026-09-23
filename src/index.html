@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>Submit Stat — IFSHK</title>
+    <meta name="description" content="Submit an Ingress ALL TIME stat block for an active IFSHK event." />
+    <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+    <main class="card" role="main">
+        <header class="card__header">
+            <h1 class="card__title" data-i18n="title">Submit Stat</h1>
+            <p class="card__subtitle" data-i18n="subtitle">
+                Paste the ALL TIME stat block from the Ingress game and submit it for the active event.
+            </p>
+            <div class="lang">
+                <label class="lang__label" for="lang" data-i18n="languageLabel">Language</label>
+                <select id="lang" class="lang__select" aria-label="Language">
+                    <option value="en">English</option>
+                    <option value="zh-HK">繁體中文</option>
+                    <option value="zh-CN">简体中文</option>
+                </select>
+            </div>
+        </header>
+
+        <form id="statForm" class="form" autocomplete="off" novalidate>
+            <div id="eventWrap" class="field">
+                <label class="field__label" for="event" data-i18n="eventLabel">Event</label>
+                <select id="event" class="field__control" data-i18n-attr="eventPlaceholder"></select>
+            </div>
+
+            <p id="eventStatus" class="field__hint field__hint--status" role="status" aria-live="polite"></p>
+
+            <div id="statField" class="field">
+                <label class="field__label" for="stat" data-i18n="statLabel">Stat data</label>
+                <textarea id="stat" class="field__control field__control--textarea" rows="8" spellcheck="false"
+                    data-i18n-attr="statPlaceholder"></textarea>
+                <p class="field__hint" data-i18n="statHint">
+                    Copy the ALL TIME stats from the Ingress app and paste them here.
+                </p>
+            </div>
+
+            <div id="formActions" class="form__actions">
+                <button type="submit" id="submit" class="btn" data-i18n="submitBtn">Submit</button>
+            </div>
+        </form>
+
+        <section id="checkin" class="panel" hidden aria-live="polite">
+            <h2 class="panel__title" data-i18n="checkinTitle">Check in</h2>
+            <p class="panel__caption" data-i18n="checkinCaption">
+                Please present this QR code to the event leader (PoC) to check in.
+            </p>
+            <div id="qrcodeWrap" class="panel__qrcode">
+                <img id="qrcode" class="panel__img" alt="Check-in QR code" />
+                <span id="qrcodeState" class="panel__state" data-i18n="qrLoading">Generating QR code…</span>
+            </div>
+            <p id="checkinState" class="panel__state" role="status" aria-live="polite"></p>
+        </section>
+
+        <section id="status" class="status" role="status" aria-live="polite" aria-atomic="true" hidden></section>
+
+        <section id="requirement" class="status status--info" role="status" aria-live="polite" hidden></section>
+
+        <script type="module" src="app.js"></script>
+</body>
+
+</html>
