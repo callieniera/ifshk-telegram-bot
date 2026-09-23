@@ -17,6 +17,7 @@ class EventHandlers {
 		if (opt.qrcodes) this.#sentCheckinQrCode = new Map(Object.entries(opt.qrcodes));
 		if (opt.passcode) this.#passcode = opt.passcode;
 		if (opt.sentPasscode) this.#sentPasscode = new Map(Object.entries(opt.sentPasscode));
+		if (opt.subStatus) this.#opt.subStatus = opt.subStatus;
 		if (opt.messages)
 			this.#messages = new Map(Object.entries(opt.messages).map(([chat_id, ids]) => [String(chat_id), new Set((ids || []).map((v) => Number(v)))]));
 		this.#initOnStart();
@@ -26,6 +27,7 @@ class EventHandlers {
 	#opt = {
 		sheetID: null,
 		eventID: null,
+		subStatus: null,
 		isTest: false,
 	};
 
@@ -55,6 +57,7 @@ class EventHandlers {
 				restockGoogle: null,
 				channel: null,
 			};
+			this.#opt.subStatus = "Distance Walked";
 		} else if (!this.#details) await this.#retrieveEventData();
 		this.#inited.forEach((r) => r(true));
 		this.#inited = true;
@@ -176,7 +179,10 @@ class EventHandlers {
 		try {
 			await resolveTab(token, sid, 0);
 			this.#opt.sheetID = sid;
-			return { ok: true, sid: sid };
+			const headers = await getRange(token, sid, "'Data'!O1");
+			const subStatus = headers[0] && headers[0][0] ? String(headers[0][0]) : null;
+			if (subStatus && this.#StatusKeys.includes(subStatus)) this.#opt.subStatus = subStatus;
+			return { ok: true, sid: sid, subStatus: this.#opt.subStatus };
 		} catch (err) {
 			if (err.status === 403) return { ok: false, error: "SHEET_ACCESS_DENIED" };
 			if (err.status === 404) return { ok: false, error: "SHEET_NOT_FOUND" };
@@ -369,77 +375,79 @@ class EventHandlers {
 		}
 	}
 
+	#StatusKeys = [
+		"Time Span",
+		"Agent Name",
+		"Agent Faction",
+		"Date (yyyy-mm-dd)",
+		"Time (hh:mm:ss)",
+		"Level",
+		"Lifetime AP",
+		"Current AP",
+		"Unique Portals Visited",
+		"Unique Portals Drone Visited",
+		"Furthest Drone Distance",
+		"Portals Discovered",
+		"Seer Points",
+		"XM Collected",
+		"OPR Agreements",
+		"Portal Scans Uploaded",
+		"Uniques Scout Controlled",
+		"Resonators Deployed",
+		"Links Created",
+		"Control Fields Created",
+		"Mind Units Captured",
+		"Longest Link Ever Created",
+		"Largest Control Field",
+		"XM Recharged",
+		"Portals Captured",
+		"Unique Portals Captured",
+		"Mods Deployed",
+		"Hacks",
+		"Drone Hacks",
+		"Glyph Hack Points",
+		"Overclock Hack Points",
+		"Completed Hackstreaks",
+		"Longest Sojourner Streak",
+		"Resonators Destroyed",
+		"Portals Neutralized",
+		"Enemy Links Destroyed",
+		"Enemy Fields Destroyed",
+		"Battle Beacon Combatant",
+		"Drones Returned",
+		"Machina Links Destroyed",
+		"Machina Resonators Destroyed",
+		"Machina Portals Neutralized",
+		"Machina Portals Reclaimed",
+		"Max Time Portal Held",
+		"Max Time Link Maintained",
+		"Max Link Length x Days",
+		"Max Time Field Held",
+		"Largest Field MUs x Days",
+		"Forced Drone Recalls",
+		"Distance Walked",
+		"Kinetic Capsules Completed",
+		"Unique Missions Completed",
+		"Research Bounties Completed",
+		"Research Days Completed",
+		"Mission Day(s) Attended",
+		"NL-1331 Meetup(s) Attended",
+		"First Saturday Events",
+		"Second Sunday Events",
+		"Clear Fields Events",
+		"OPR Live Events",
+		"Prime Challenges",
+		"Intel Ops Missions",
+		"Stealth Ops Missions",
+		"Urban Ops Missions",
+		"Agents Recruited",
+		"Recursions",
+		"Months Subscribed",
+	];
+
 	#stringParser(string) {
 		if (!string.includes("ALL TIME")) return { ok: false, error: "Wrong_Value_Type" };
-		const keys = [
-			"Time Span",
-			"Agent Name",
-			"Agent Faction",
-			"Date (yyyy-mm-dd)",
-			"Time (hh:mm:ss)",
-			"Level",
-			"Lifetime AP",
-			"Current AP",
-			"Unique Portals Visited",
-			"Unique Portals Drone Visited",
-			"Furthest Drone Distance",
-			"Portals Discovered",
-			"Seer Points",
-			"XM Collected",
-			"OPR Agreements",
-			"Portal Scans Uploaded",
-			"Uniques Scout Controlled",
-			"Resonators Deployed",
-			"Links Created",
-			"Control Fields Created",
-			"Mind Units Captured",
-			"Longest Link Ever Created",
-			"Largest Control Field",
-			"XM Recharged",
-			"Portals Captured",
-			"Unique Portals Captured",
-			"Mods Deployed",
-			"Hacks",
-			"Drone Hacks",
-			"Glyph Hack Points",
-			"Overclock Hack Points",
-			"Completed Hackstreaks",
-			"Longest Sojourner Streak",
-			"Resonators Destroyed",
-			"Portals Neutralized",
-			"Enemy Links Destroyed",
-			"Enemy Fields Destroyed",
-			"Battle Beacon Combatant",
-			"Drones Returned",
-			"Machina Links Destroyed",
-			"Machina Resonators Destroyed",
-			"Machina Portals Neutralized",
-			"Machina Portals Reclaimed",
-			"Max Time Portal Held",
-			"Max Time Link Maintained",
-			"Max Link Length x Days",
-			"Max Time Field Held",
-			"Largest Field MUs x Days",
-			"Forced Drone Recalls",
-			"Distance Walked",
-			"Kinetic Capsules Completed",
-			"Unique Missions Completed",
-			"Research Bounties Completed",
-			"Research Days Completed",
-			"Mission Day(s) Attended",
-			"NL-1331 Meetup(s) Attended",
-			"First Saturday Events",
-			"Second Sunday Events",
-			"Clear Fields Events",
-			"OPR Live Events",
-			"Prime Challenges",
-			"Intel Ops Missions",
-			"Stealth Ops Missions",
-			"Urban Ops Missions",
-			"Agents Recruited",
-			"Recursions",
-			"Months Subscribed",
-		];
+		const keys = this.#StatusKeys;
 		const valueSearch = ["ALL TIME"];
 		const proccessString = (input, array) => {
 			return array.reduce((string, value) => string.replace(value, value.split(" ").join("")), input);
