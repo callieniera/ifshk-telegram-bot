@@ -668,12 +668,14 @@ class EventHandlers {
 		const token = await this.#instances.google.getServiceAccountToken();
 		const rows = await getRange(token, this.#opt.sheetID, "'Data'!A:O");
 		rows.splice(0, 1);
-		const seen = new Set();
+		const seen = { agentName: new Set(), id: new Set() };
 		for (const row of rows) {
 			if (!this.#rowQualifiesForPasscode(row)) continue;
 			const agentName = String(row[4]).toLocaleLowerCase();
-			if (seen.has(agentName)) continue;
-			seen.add(agentName);
+			const id = Number(row[2]);
+			if (!id || Number.isNaN(id) || seen.id.has(id) || seen.agentName.has(agentName)) continue;
+			seen.id.add(id);
+			seen.agentName.add(agentName);
 			recipients.push({ id: Number(row[2]), agentName: row[4] });
 		}
 		return recipients;
