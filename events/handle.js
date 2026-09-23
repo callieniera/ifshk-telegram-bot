@@ -445,26 +445,38 @@ class EventHandlers {
 	];
 
 	#stringParser(string) {
-		if (!string.includes("ALL TIME")) return { ok: false, error: "Wrong_Value_Type" };
-		const keys = this.#StatKeys;
-		const valueSearch = ["ALL TIME"];
-		const proccessString = (input, array) => {
-			return array.reduce((string, value) => string.replace(value, value.split(" ").join("")), input);
-		};
-		const [keysRaw, valuesRaw] = String(string).split("\n");
-		if (!valuesRaw) return { ok: false, error: "Invalid" };
-
-		const keyString = proccessString(keysRaw, keys);
-		const valuesString = proccessString(valuesRaw, valueSearch);
-
-		const values = {};
-		const keysArray = keyString.split(" ");
-		const valuesArray = valuesString.split(" ").map((v) => (isNaN(Number(v)) ? v : Number(v)));
-		for (const i in keysArray) {
-			values[keysArray[i]] = valuesArray[i];
-			if (keysArray[i] === "DistanceWalked") break;
+		const output = {};
+		if (String(string).includes("\t")) {
+			const [keyStr, valueStr] = String(string).split("\n");
+			if (!valueStr) return { ok: false, error: "Invalid" };
+			const keys = keyStr.split("\t").filter((key) => key !== "");
+			const values = valueStr.split("\t").filter((value) => value !== "");
+			if (keys.length !== values.length) return { ok: false, error: "Invalid" };
+			keys.forEach((key, i) => {
+				if (!this.#StatKeys.includes(key)) this.#StatKeys.push(key);
+				const normalizedKey = key.split(" ").join("");
+				const normalizedValue = isNaN(Number(values[i])) ? values[i].split(" ").join("") : Number(values[i]);
+				output[normalizedKey] = normalizedValue;
+			});
+		} else {
+			const keys = this.#StatKeys;
+			const valueSearch = ["ALL TIME"];
+			const proccessString = (input, array) => {
+				return array.reduce((string, value) => string.replace(value, value.split(" ").join("")), input);
+			};
+			const [keysRaw, valuesRaw] = String(string).split("\n");
+			if (!valuesRaw) return { ok: false, error: "Invalid" };
+			const keyString = proccessString(keysRaw, keys);
+			const valuesString = proccessString(valuesRaw, valueSearch);
+			const keysArray = keyString.split(" ");
+			const valuesArray = valuesString.split(" ").map((v) => (isNaN(Number(v)) ? v : Number(v)));
+			for (const i in keysArray) {
+				output[keysArray[i]] = valuesArray[i];
+				if (keysArray[i] === "DistanceWalked") break;
+			}
 		}
-		return { ok: true, values: values };
+		if (output["TimeSpan"] !== "ALLTIME") return { ok: false, error: "Wrong_Value_Type" };
+		return { ok: true, values: output };
 	}
 
 	#sentCheckinQrCode = new Map();
