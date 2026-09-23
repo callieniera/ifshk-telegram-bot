@@ -17,7 +17,7 @@ class EventHandlers {
 		if (opt.qrcodes) this.#sentCheckinQrCode = new Map(Object.entries(opt.qrcodes));
 		if (opt.passcode) this.#passcode = opt.passcode;
 		if (opt.sentPasscode) this.#sentPasscode = new Map(Object.entries(opt.sentPasscode));
-		if (opt.subStatus) this.#opt.subStatus = opt.subStatus;
+		if (opt.subStat) this.#opt.subStat = opt.subStat;
 		if (opt.messages)
 			this.#messages = new Map(Object.entries(opt.messages).map(([chat_id, ids]) => [String(chat_id), new Set((ids || []).map((v) => Number(v)))]));
 		this.#initOnStart();
@@ -27,7 +27,7 @@ class EventHandlers {
 	#opt = {
 		sheetID: null,
 		eventID: null,
-		subStatus: null,
+		subStat: "Distance Walked",
 		isTest: false,
 	};
 
@@ -57,7 +57,6 @@ class EventHandlers {
 				restockGoogle: null,
 				channel: null,
 			};
-			this.#opt.subStatus = "Distance Walked";
 		} else if (!this.#details) await this.#retrieveEventData();
 		this.#inited.forEach((r) => r(true));
 		this.#inited = true;
@@ -180,9 +179,9 @@ class EventHandlers {
 			await resolveTab(token, sid, 0);
 			this.#opt.sheetID = sid;
 			const headers = await getRange(token, sid, "'Data'!O1");
-			const subStatus = headers[0] && headers[0][0] ? String(headers[0][0]) : null;
-			if (subStatus && this.#StatusKeys.includes(subStatus)) this.#opt.subStatus = subStatus;
-			return { ok: true, sid: sid, subStatus: this.#opt.subStatus };
+			const subStat = headers[0] && headers[0][0] ? String(headers[0][0]) : null;
+			if (subStat && this.#StatKeys.includes(subStat)) this.#opt.subStat = subStat;
+			return { ok: true, sid: sid, subStat: this.#opt.subStat };
 		} catch (err) {
 			if (err.status === 403) return { ok: false, error: "SHEET_ACCESS_DENIED" };
 			if (err.status === 404) return { ok: false, error: "SHEET_NOT_FOUND" };
@@ -244,9 +243,9 @@ class EventHandlers {
 		const i18n = this.#instances.i18n;
 		const { ok, values, error } = this.#stringParser(string);
 		if (!ok || error) return i18n.t(user_info, "error.parse_failed", { error: error || i18n.t(user_info, "error.parse_unknown") });
-
+		const subStatName = this.#opt.subStat.split(" ").join("");
 		// Validate required fields
-		const requiredKeys = ["AgentName", "AgentFaction", "Date(yyyy-mm-dd)", "Time(hh:mm:ss)", "Level", "LifetimeAP", "XMRecharged"];
+		const requiredKeys = ["AgentName", "AgentFaction", "Date(yyyy-mm-dd)", "Time(hh:mm:ss)", "Level", "LifetimeAP", subStatName];
 		for (const key of requiredKeys) {
 			if (values[key] === undefined || values[key] === "") {
 				return i18n.t(user_info, "error.missing_field", { field: key });
@@ -259,12 +258,12 @@ class EventHandlers {
 		if (!this.#isStatFresh(dateStr, timeStr)) return i18n.t(user_info, "error.stat_stale");
 		const level = Number(values["Level"]);
 		const lifetimeAP = Number(values["LifetimeAP"]);
-		const xmRecharged = Number(values["XMRecharged"]);
+		const subStat = Number(values[subStatName]);
 		const release = await this.handleQueue();
 		try {
 			await this.initSync();
 			const idx = await this.#getRowByAgentName(agentName);
-			const value = { agentName, agentFaction, level, lifetimeAP, xmRecharged, id: user_info.id };
+			const value = { agentName, agentFaction, level, lifetimeAP, subStat, id: user_info.id };
 			const res = idx === -1 ? await this.#buildNewEntry(value) : await this.#updateEntry(idx, value, user_info);
 			if (res && idx === -1) {
 				this.#userMap.set(user_info.id, { agentName, languageCode: user_info.language_code });
@@ -333,7 +332,7 @@ class EventHandlers {
 					values.lifetimeAP,
 					undefined,
 					undefined,
-					values.xmRecharged,
+					values.subStat,
 				],
 			]);
 			return true;
@@ -359,7 +358,7 @@ class EventHandlers {
 			newValue[8] = undefined;
 			newValue[10] = values.lifetimeAP;
 			newValue[11] = undefined;
-			newValue[13] = values.xmRecharged;
+			newValue[13] = values.subStat;
 			newValue[14] = undefined;
 		} else return i18n.t(user_info, "error.lifetime_ap");
 		try {
@@ -375,7 +374,7 @@ class EventHandlers {
 		}
 	}
 
-	#StatusKeys = [
+	#StatKeys = [
 		"Time Span",
 		"Agent Name",
 		"Agent Faction",
@@ -447,7 +446,7 @@ class EventHandlers {
 
 	#stringParser(string) {
 		if (!string.includes("ALL TIME")) return { ok: false, error: "Wrong_Value_Type" };
-		const keys = this.#StatusKeys;
+		const keys = this.#StatKeys;
 		const valueSearch = ["ALL TIME"];
 		const proccessString = (input, array) => {
 			return array.reduce((string, value) => string.replace(value, value.split(" ").join("")), input);
