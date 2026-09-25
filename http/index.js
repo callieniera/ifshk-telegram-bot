@@ -11,6 +11,12 @@ class HTTPApps {
 		return;
 	}
 	#instances;
+
+	headers = {
+		"Access-Control-Allow-Origin": "*",
+		"Access-Control-Allow-Methods": "POST, OPTIONS",
+		"Access-Control-Max-Age": "300",
+	};
 }
 
 export default HTTPApps;

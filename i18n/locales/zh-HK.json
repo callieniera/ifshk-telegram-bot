@@ -61,6 +61,7 @@
 		"requirement_pending": "資格檢查待處理——請先提交結束數據。",
 		"no_agent": "請先提交數據以生成你的簽到二維碼。",
 		"qr_loading": "正在生成二維碼……",
-		"event_no_active": "目前沒有可參與的活動。"
+		"event_no_active": "目前沒有可參與的活動。",
+		"stat_hint": "由 Ingress 應用複製 ALL TIME 數據並點擊提交按鈕。數據須於複製後約 5 分鐘內提交。"
 	}
 }

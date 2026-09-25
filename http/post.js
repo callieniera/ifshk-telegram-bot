@@ -7,6 +7,7 @@ class HTTPPostHandler {
 	#instances;
 
 	async #Submit(request, reply) {
+		reply.headers(this.#instances.http.headers);
 		try {
 			const { eventId } = request.params;
 			const evtObj = this.#instances.events.getEvent(eventId);

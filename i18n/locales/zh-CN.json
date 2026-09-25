@@ -61,6 +61,7 @@
 		"requirement_pending": "资格检查待处理——请先提交结束数据。",
 		"no_agent": "请先提交数据以生成你的签到二维码。",
 		"qr_loading": "正在生成二维码……",
-		"event_no_active": "目前没有可参与的活动。"
+		"event_no_active": "目前没有可参与的活动。",
+		"stat_hint": "复制 Ingress 应用中的 ALL TIME 数据后点击提交按钮。数据必须在复制后约 5 分钟内提交。"
 	}
 }

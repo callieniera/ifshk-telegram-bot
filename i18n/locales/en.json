@@ -61,6 +61,7 @@
 		"requirement_pending": "Requirement check pending \u2014 submit your end stat first.",
 		"no_agent": "Submit a stat first to generate your check-in QR code.",
 		"qr_loading": "Generating QR code\u2026",
-		"event_no_active": "No available event."
+		"event_no_active": "No available event.",
+		"stat_hint": "Copy the ALL TIME stats from the Ingress app and click the submit button. Stats must be submitted within about 5 minutes after copied."
 	}
 }

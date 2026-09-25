@@ -43,10 +43,10 @@ class HTTPToken {
 	 */
 	issue(languageCode) {
 		const id = crypto.randomUUID();
-		const payload = { sub: id, iat: Date.now(), lang: languageCode || "en" };
+		const payload = { sub: id, iat: Date.now(), lang: languageCode || "zh-HK" };
 		const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
 		const token = `${this.#HEADER}.${body}.${this.#sign(`${this.#HEADER}.${body}`)}`;
-		return { token, id, languageCode: languageCode || "en" };
+		return { token, id, languageCode: languageCode || "zh-HK" };
 	}
 
 	/**
@@ -90,7 +90,7 @@ class HTTPToken {
 	// SameSite=None lets a cross-origin web client send the cookie back; switch to
 	// "Lax"/"Strict" if the API and the client share the same origin.
 	setCookieHeader(reply, token, { sameSite = "None" } = {}) {
-		const flags = ["Path=/", "HttpOnly", "Secure", sameSite ? `SameSite=${sameSite}` : ""].filter(Boolean).join("; ");
+		const flags = ["Path=/", "HttpOnly", "Secure", "Max-Age=21600", sameSite ? `SameSite=${sameSite}` : ""].filter(Boolean).join("; ");
 		reply.header("set-cookie", `${this.#COOKIE_NAME}=${encodeURIComponent(String(token))}; ${flags}`);
 		return reply;
 	}
