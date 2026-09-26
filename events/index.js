@@ -230,6 +230,7 @@ class EventApp {
 			this.#events.delete(eventID);
 			this.scheduleSave();
 			void this.#deleteEventMessages(eventObj);
+			void eventObj.onEventEnds();
 		}
 		return;
 	}

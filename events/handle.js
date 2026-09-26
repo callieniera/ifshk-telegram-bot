@@ -829,6 +829,30 @@ class EventHandlers {
 		exportValue.messages = Object.fromEntries([...this.#messages.entries()].map(([chat_id, set]) => [chat_id, [...set]]));
 		return exportValue;
 	}
+
+	async onEventEnds() {
+		if (!this.#opt.sheetID) return;
+		const token = await this.#instances.google.getServiceAccountToken();
+		const release = await this.handleQueue();
+		try {
+			await this.initSync();
+			const range = await getRange(token, this.#opt.sheetID, "'Data'!A:O");
+			await updateRange(
+				token,
+				this.#opt.sheetID,
+				`'Data'!B:C`,
+				range.map((row, idx) => {
+					if (!idx) return [row[1], row[2]];
+					else {
+						if (String(row[4] || "").length) return [this.#rowQualifiesForPasscode(row), ""];
+						else return [false, ""];
+					}
+				})
+			);
+		} finally {
+			release();
+		}
+	}
 }
 
 export default EventHandlers;
