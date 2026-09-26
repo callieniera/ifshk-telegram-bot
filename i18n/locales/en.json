@@ -14,7 +14,7 @@
 		"parse_failed": "Parse failed: {{error}}",
 		"parse_unknown": "Unknown Error",
 		"missing_field": "Missing or empty field: {{field}}",
-		"account_not_match": "Telegram account not match.",
+		"account_not_match": "Account not match.",
 		"lifetime_ap": "Lifetime AP hasn't been updated since the last submission.",
 		"stat_stale": "<i>Please copy your stat from the game again and submit it immediately.</i>"
 	},

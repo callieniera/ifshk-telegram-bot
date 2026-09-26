@@ -193,16 +193,16 @@ class EventHandlers {
 		return this.#opt.sheetID;
 	}
 
-	async #getRowByAgentName(agentName) {
+	async #getRowByAgentName(agentName, user_info) {
 		if (!this.#opt.sheetID) return false;
 		const token = await this.#instances.google.getServiceAccountToken();
-		const header = await getRange(token, this.#opt.sheetID, "'Data'!1:1");
-		if (!header[0]) return false;
-		const agentNameColumn = header[0].findIndex((v) => v.includes("Agent Name"));
-		const columnA1 = indexToA1(agentNameColumn);
-		const agentNameArr = await getRange(token, this.#opt.sheetID, `'Data'!${columnA1}:${columnA1}`);
-		agentNameArr.splice(0, 1);
-		const idx = agentNameArr.map(([v]) => (v && typeof v === "string" ? v.toLocaleLowerCase() : v)).indexOf(agentName.toLocaleLowerCase());
+		const agentNameIdArr = await getRange(token, this.#opt.sheetID, `'Data'!C:E`);
+		agentNameIdArr.splice(0, 1);
+		const idx = agentNameIdArr.map(([a, b, v]) => (v && typeof v === "string" ? v.toLocaleLowerCase() : v)).indexOf(agentName.toLocaleLowerCase());
+		if (user_info) {
+			const idCheckIdx = agentNameIdArr.findIndex(([idValue, a, b]) => idValue && String(idValue) === String(user_info.id));
+			if (idCheckIdx > -1 && idCheckIdx !== idx) return false;
+		}
 		return idx > -1 ? idx + 2 : idx;
 	}
 
@@ -262,7 +262,8 @@ class EventHandlers {
 		const release = await this.handleQueue();
 		try {
 			await this.initSync();
-			const idx = await this.#getRowByAgentName(agentName);
+			const idx = await this.#getRowByAgentName(agentName, user_info);
+			if (idx === false) return i18n.t(user_info, "error.account_not_match");
 			const value = { agentName, agentFaction, level, lifetimeAP, subStat, id: user_info.id };
 			const res = idx === -1 ? await this.#buildNewEntry(value) : await this.#updateEntry(idx, value, user_info);
 			if (res) this.#userStatusCache.delete(String(user_info.id));

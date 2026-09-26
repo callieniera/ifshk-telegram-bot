@@ -14,7 +14,7 @@
 		"parse_failed": "处理数据时遇到错误：{{error}}",
 		"parse_unknown": "未知错误",
 		"missing_field": "数据缺失：{{field}}",
-		"account_not_match": "Telegram 账户不匹配。",
+		"account_not_match": "账户不匹配。",
 		"lifetime_ap": "自上次提交后 AP 未有增加。",
 		"stat_stale": "请重新复制游戏数据，并尽快提交。"
 	},
