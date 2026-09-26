@@ -1,11 +1,17 @@
 class HTTPGetHandler {
 	constructor(instances) {
 		this.#instances = instances;
+		this.#instances.server.get("/api/bot", this.#Bot.bind(this));
 		this.#instances.server.get("/api/events", this.#Events.bind(this));
 		this.#instances.server.get("/api/events/:eventId/status", this.#Status.bind(this));
 		return;
 	}
 	#instances;
+
+	#Bot(_, reply) {
+		reply.headers(this.#instances.http.headers);
+		return reply.code(200).send({ ok: true, username: this.#instances.telegram.BOT_USERNAME });
+	}
 
 	#Events(_, reply) {
 		try {

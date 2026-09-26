@@ -8,6 +8,18 @@ class API {
 		})();
 	}
 
+	async getBotUsername() {
+		try {
+			const res = await fetch(`${this.API_BASE}/api/bot`);
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok || !data.ok) throw new Error(data.error || "load_failed");
+			return data.username || "HKFirstSaturdayBot";
+		} catch (e) {
+			console.error(e);
+			return "HKFirstSaturdayBot";
+		}
+	}
+
 	async loadEvents() {
 		try {
 			const res = await fetch(`${this.API_BASE}/api/events`, { method: "GET", credentials: "include" });
@@ -82,6 +94,7 @@ class App {
 		this.clearStatusTimers();
 		this.closeQR();
 		this.renderLoading();
+		this.bot_username = await this.api.getBotUsername();
 		await this.getEventsAndRender();
 	}
 
@@ -150,7 +163,7 @@ class App {
 				const values = String(valueStr || "")
 					.split("\t")
 					.filter((value) => value !== "");
-				if (!keys.length || !values.length || !keys.length !== values.length) throw new Error("提交失敗：數據格式錯誤");
+				if (!keys.length || !values.length || keys.length !== values.length) throw new Error("提交失敗：數據格式錯誤");
 				submitBtn.textContent = "提交中...";
 				const result = await this.api.submit(eventId, stat);
 				if (!result || typeof result === "string") throw new Error(result || "提交失敗");
@@ -238,7 +251,7 @@ class App {
 			close.addEventListener("click", () => this.closeQR());
 			const faction = String(agentFaction).toLowerCase();
 			new QRCode(container, {
-				text: `https://t.me/?start=checkin-${encodeURIComponent(eventId)}-${encodeURIComponent(agentName)}`,
+				text: `https://t.me/${this.bot_username}?start=checkin-${encodeURIComponent(eventId)}-${encodeURIComponent(agentName)}`,
 				width: 280,
 				height: 280,
 				colorDark: faction.includes("enl") ? "#19c37d" : faction.includes("res") ? "#0b5a7a" : "#111111",
