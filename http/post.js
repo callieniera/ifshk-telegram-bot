@@ -2,12 +2,14 @@ class HTTPPostHandler {
 	constructor(instances) {
 		this.#instances = instances;
 		this.#instances.server.post("/api/events/:eventId/submit", this.#Submit.bind(this));
+		this.#instances.server.options("/api/events/:eventId/submit", this.#Submit.bind(this));
 		return;
 	}
 	#instances;
 
 	async #Submit(request, reply) {
 		reply.headers(this.#instances.http.headers);
+		if (request.method === "OPTIONS") return reply.code(204).send();
 		try {
 			const { eventId } = request.params;
 			const evtObj = this.#instances.events.getEvent(eventId);

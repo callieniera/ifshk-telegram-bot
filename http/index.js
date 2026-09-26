@@ -13,8 +13,10 @@ class HTTPApps {
 	#instances;
 
 	headers = {
-		"Access-Control-Allow-Origin": "*",
+		"Access-Control-Allow-Origin": "https://ifshk-checkin-helper.pages.dev",
 		"Access-Control-Allow-Methods": "POST, OPTIONS",
+		"Access-Control-Allow-Headers": "Content-Type, Accept, Accept-Language",
+		"Access-Control-Allow-Credentials": "true",
 		"Access-Control-Max-Age": "300",
 	};
 }

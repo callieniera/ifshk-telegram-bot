@@ -4,13 +4,13 @@ class API {
 			const params = new URLSearchParams(location.search);
 			const override = params.get("apiBase") || window.IFS_API_BASE;
 			if (override && /^https?:\/\//i.test(override)) return override.replace(/\/+$/, "");
-			return location.origin;
+			return "https://api.akimiyabi.com/ifshk";
 		})();
 	}
 
 	async loadEvents() {
 		try {
-			const res = await fetch(`${this.API_BASE}/api/events`);
+			const res = await fetch(`${this.API_BASE}/api/events`, { method: "GET", credentials: "include" });
 			const data = await res.json().catch(() => ({}));
 			if (!res.ok || !data.ok) throw new Error(data.error || "load_failed");
 			return Array.isArray(data.events) ? data.events : [];
@@ -22,8 +22,9 @@ class API {
 
 	async loadStatus(eventId) {
 		try {
-			const res = await fetch(`${this.API_BASE}/api/events/${encodeURIComponent(eventId)}/status`);
+			const res = await fetch(`${this.API_BASE}/api/events/${encodeURIComponent(eventId)}/status`, { method: "GET", credentials: "include" });
 			const data = await res.json().catch(() => ({}));
+			if (!res.ok && res.status === 404) return false;
 			if (!res.ok || !data.ok) throw new Error(data.error || "load_failed");
 			return data.result && typeof data.result === "object" ? data.result : data;
 		} catch (e) {
@@ -85,11 +86,11 @@ class App {
 	}
 
 	renderLoading() {
-		document.body.innerHTML = `
-			<div class="screen" role="status" aria-live="polite">
-				<div class="spinner" aria-hidden="true"></div>
-				<h1 class="screen-title">請稍候...</h1>
-			</div>`;
+		document.body.innerHTML =
+			`<div class="screen" role="status" aria-live="polite">` +
+			`<div class="spinner" aria-hidden="true"></div>` +
+			`<h1 class="screen-title">請稍候...</h1>` +
+			`</div>`;
 	}
 
 	async getEventsAndRender() {
@@ -98,25 +99,25 @@ class App {
 		if (!list.length) return this.renderOperationalError("目前沒有活動進行中", "請稍後再試", true);
 		if (list.length === 1) return this.renderSubmit(list[0]);
 
-		document.body.innerHTML = `
-			<div class="screen">
-				<h1 class="screen-title">選擇活動</h1>
-				<div class="event-list">
-					${list.map((event) => `<button class="btn-primary event-choice" data-event-id="${event.id}">${event.title || `活動 ${event.id}`}</button>`).join("")}
-				</div>
-			</div>`;
+		document.body.innerHTML =
+			`<div class="screen">` +
+			`<h1 class="screen-title">選擇活動</h1>` +
+			`<div class="event-list">` +
+			list.map((event) => `<button class="btn-primary event-choice" data-event-id="${event.id}">${event.title || `活動 ${event.id}`}</button>`).join("") +
+			`</div>` +
+			`</div>`;
 		document.querySelectorAll(".event-choice").forEach((button) => {
 			button.addEventListener("click", () => this.renderSubmit(list.find((event) => String(event.id) === button.dataset.eventId)));
 		});
 	}
 
 	renderOperationalError(title, description, canRetry) {
-		document.body.innerHTML = `
-			<div class="screen">
-				<h1 class="screen-title">${title || "遇到錯誤"}</h1>
-				<p class="screen-subtitle">${description || "請稍後再試"}</p>
-				<div class="screen-actions">${canRetry ? '<button id="retryBtn" class="btn-primary">重試</button>' : ""}</div>
-			</div>`;
+		document.body.innerHTML =
+			`<div class="screen">` +
+			`<h1 class="screen-title">${title || "遇到錯誤"}</h1>` +
+			`<p class="screen-subtitle">${description || "請稍後再試"}</p>` +
+			`<div class="screen-actions">${canRetry ? '<button id="retryBtn" class="btn-primary">重試</button>' : ""}</div>` +
+			`</div>`;
 		const retryBtn = document.querySelector("#retryBtn");
 		if (retryBtn) retryBtn.addEventListener("click", () => this.bootstrap());
 	}
@@ -126,12 +127,12 @@ class App {
 		if (eventId == null) return this.renderOperationalError("活動資訊錯誤", "請稍後再試", true);
 		this.clearStatusTimers();
 		this.closeQR();
-		document.body.innerHTML = `
-			<div class="screen">
-				<h1 class="screen-title">${event.title || "提交活動數據"}</h1>
-				<button id="submitBtn" class="btn-primary">提交數據</button>
-				<div class="status" aria-live="polite"></div>
-			</div>`;
+		document.body.innerHTML =
+			`<div class="screen">` +
+			`<h1 class="screen-title">${event.title || "提交活動數據"}</h1>` +
+			`<button id="submitBtn" class="btn-primary">提交數據</button>` +
+			`<div class="status" aria-live="polite"></div>` +
+			`</div>`;
 		const submitBtn = document.querySelector("#submitBtn");
 		if (!submitBtn) return;
 		this.renderStatus(eventId, event);
@@ -142,12 +143,14 @@ class App {
 				const input = typeof navigator.clipboard?.readText === "function" ? await navigator.clipboard.readText() : window.prompt("請貼上數據：");
 				const stat = String(input || "").trim();
 				if (!stat) throw new Error("提交失敗：沒有數據");
-				const [keyStr, valueStr] = stat.split("\n");
+				const lines = stat.split("\n");
+				if (lines.length !== 2) throw new Error("提交失敗：數據格式錯誤");
+				const [keyStr, valueStr] = lines;
 				const keys = keyStr.split("\t").filter((value) => value !== "");
 				const values = String(valueStr || "")
 					.split("\t")
 					.filter((value) => value !== "");
-				if (keys.length !== values.length) throw new Error("提交失敗：數據格式錯誤");
+				if (!keys.length || !values.length || !keys.length !== values.length) throw new Error("提交失敗：數據格式錯誤");
 				submitBtn.textContent = "提交中...";
 				const result = await this.api.submit(eventId, stat);
 				if (!result || typeof result === "string") throw new Error(result || "提交失敗");
@@ -182,7 +185,8 @@ class App {
 			try {
 				const result = await this.api.loadStatus(eventId);
 				if (!result) {
-					if (this.statusTimer) clearInterval(this.statusTimer);
+					if (result === false) return this.bootstrap();
+					this.clearStatusTimers();
 					screen.innerHTML = "";
 					return;
 				}
@@ -202,6 +206,10 @@ class App {
 	}
 
 	renderStatusResult(screen, eventId, event, result) {
+		if (result.agentFaction) {
+			document.body.classList.remove("faction-enlightened", "faction-resistance");
+			document.body.classList.add(`faction-${String(result.agentFaction).toLowerCase()}`);
+		}
 		if (result.checkedIn) {
 			if (this.statusTimer) clearInterval(this.statusTimer);
 			this.statusTimer = null;
@@ -211,7 +219,6 @@ class App {
 		screen.innerHTML = "";
 		if (result.checkedIn) this.renderCheckedIn(screen);
 		else if (identity) {
-			screen.appendChild(Object.assign(document.createElement("p"), { className: "screen-subtitle", textContent: "請掃描 QR code 完成簽到" }));
 			this.renderQR(screen, eventId, result.agentName, result.agentFaction);
 		}
 		this.renderQualification(screen, result);
@@ -219,7 +226,7 @@ class App {
 	}
 
 	renderQR(screen, eventId, agentName, agentFaction) {
-		const button = Object.assign(document.createElement("button"), { className: "btn-primary qr-button", type: "button", textContent: "顯示簽到 QR code" });
+		const button = Object.assign(document.createElement("button"), { className: "btn-primary qr-button", type: "button", textContent: "顯示簽到 QR Code" });
 		button.addEventListener("click", () => {
 			this.closeQR();
 			const overlay = Object.assign(document.createElement("div"), { className: "qr-overlay", id: "qrOverlay" });
@@ -254,7 +261,7 @@ class App {
 		const qualification = document.createElement("div");
 		qualification.className = result.qualifies ? "status-inner qualification qualification-met" : "status-inner qualification";
 		const ap = result.apGained == null ? "尚未提交第二次數據" : `AP 增加：${result.apGained}`;
-		qualification.innerHTML = `<strong>${result.qualifies ? "已達成資格" : "尚未達成資格"}</strong><span>${ap}</span>`;
+		qualification.innerHTML = `<strong>${result.qualifies ? "已達成 IFS 參與要求" : "尚未達成 IFS 參與要求"}</strong><span>${ap}</span>`;
 		screen.appendChild(qualification);
 	}
 
