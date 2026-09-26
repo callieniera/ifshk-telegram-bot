@@ -1,0 +1,183 @@
+body {
+	margin: 0;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+.screen-title {
+	margin: 0;
+	font-size: 24px;
+}
+
+.screen-subtitle {
+	margin: 0;
+	font-size: 18px;
+	color: #8e8e93;
+}
+
+input,
+textarea,
+select,
+button {
+	margin-top: 0em;
+	color: initial;
+	letter-spacing: normal;
+	word-spacing: normal;
+	line-height: normal;
+	text-transform: none;
+	text-indent: 0px;
+	text-shadow: none;
+	display: inline-block;
+	text-align: start;
+}
+button {
+	appearance: auto;
+}
+
+button {
+	border: 0;
+	cursor: pointer;
+	border-radius: 10px;
+	padding: 10px 12px;
+	font-weight: 600;
+}
+
+.btn-primary {
+	background: #663399;
+	color: #ffffff;
+	border: 0;
+	cursor: pointer;
+	border-radius: 10px;
+	padding: 10px 12px;
+	font-weight: 600;
+	text-align: center;
+	box-sizing: border-box;
+}
+
+.screen {
+	max-width: 640px;
+	min-height: 100vh;
+	box-sizing: border-box;
+	margin: 0 auto;
+	display: grid;
+	align-content: center;
+	gap: 10px;
+	text-align: center;
+	padding-top: calc(var(--tg-content-safe-area-inset-top, 0px) + 24px);
+	padding-right: calc(var(--tg-safe-area-inset-right, 0px) + 16px);
+	padding-bottom: max(calc(var(--tg-content-safe-area-inset-bottom, 0px) + 24px), 24px);
+	padding-left: calc(var(--tg-safe-area-inset-left, 0px) + 16px);
+}
+
+.spinner {
+	width: 34px;
+	height: 34px;
+	border: 3px solid #c8c7cc;
+	border-top-color: #663399;
+	border-radius: 50%;
+	margin: 0 auto 8px;
+	animation: spin 800ms linear infinite;
+}
+
+.event-list,
+.status {
+	display: grid;
+	gap: 12px;
+}
+
+.event-choice,
+.qr-button,
+.passcode-button {
+	width: 100%;
+}
+
+.error-message {
+	color: #b3261e;
+}
+
+.status-inner {
+	display: grid;
+	gap: 6px;
+	padding: 14px;
+	border-radius: 12px;
+	background: color-mix(in srgb, currentColor 8%, transparent);
+}
+
+body.faction-enlightened .status-checkin,
+body.faction-enlightened .qualification-met {
+	color: #228b22;
+}
+
+body.faction-resistance .status-checkin,
+body.faction-resistance .qualification-met {
+	color: #4169e1;
+}
+
+body.faction-enlightened .btn-primary {
+	background: #228b22;
+}
+
+body.faction-resistance .btn-primary {
+	background: #4169e1;
+}
+
+.status-checkin {
+	font-size: 20px;
+	font-weight: 700;
+}
+
+.qualification {
+	color: #8a4b08;
+}
+
+.passcode-label {
+	margin: 4px 0 0;
+	font-size: 18px;
+	font-weight: 700;
+	word-break: break-word;
+}
+
+.qr-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 10;
+	display: grid;
+	place-items: center;
+	background: #fff;
+}
+
+.qr-fullscreen {
+	max-width: min(88vw, 420px);
+	max-height: min(88vh, 420px);
+	padding: 16px;
+	background: #fff;
+}
+
+.qr-fullscreen img,
+.qr-fullscreen canvas {
+	display: block;
+	width: min(80vw, 360px) !important;
+	height: min(80vw, 360px) !important;
+	max-height: 75vh;
+	max-width: 75vh;
+}
+
+.qr-close {
+	position: absolute;
+	top: max(16px, var(--tg-safe-area-inset-top, 0px));
+	right: max(16px, var(--tg-safe-area-inset-right, 0px));
+	width: 44px;
+	height: 44px;
+	padding: 0;
+	font-size: 34px;
+	line-height: 1;
+	background: transparent;
+	color: #000000;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}

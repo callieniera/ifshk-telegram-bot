@@ -52,5 +52,16 @@
 	"passcode": {
 		"message": "Thank you for participating in the <b>{{title}}</b>. Below is the Passcode for this event. Tap the button to copy it, then paste it in the game (Android) or on the <a href='https://intel.ingress.com'>Intel Map</a> to redeem your reward.",
 		"copy_button": "Copy Passcode"
+	},
+	"web": {
+		"waiting_checkin": "Waiting for the PoC to scan your QR code\u2026",
+		"checked_in": "You are checked in ✅",
+		"requirement_met": "You meet the requirement ✅ (+{{apGained}} AP)",
+		"requirement_unmet": "You don't meet the requirement yet \u2014 you need at least 10,000 AP gain (currently +{{apGained}}).",
+		"requirement_pending": "Requirement check pending \u2014 submit your end stat first.",
+		"no_agent": "Submit a stat first to generate your check-in QR code.",
+		"qr_loading": "Generating QR code\u2026",
+		"event_no_active": "No available event.",
+		"stat_hint": "Copy the ALL TIME stats from the Ingress app and click the submit button. Stats must be submitted within about 5 minutes after copied."
 	}
 }

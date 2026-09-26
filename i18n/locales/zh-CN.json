@@ -52,5 +52,16 @@
 	"passcode": {
 		"message": "感谢您参与 <b>{{title}}</b> 活动。以下为本次活动的 Passcode，您可点击按钮复制，并在游戏内（Android）或 <a href='https://intel.ingress.com'>Intel Map</a> 上粘贴以获取奖励。",
 		"copy_button": "复制 Passcode"
+	},
+	"web": {
+		"waiting_checkin": "正在等待负责人扫描你的二维码……",
+		"checked_in": "你已成功签到 ✅",
+		"requirement_met": "你已符合参与资格 ✅（+{{apGained}} AP）",
+		"requirement_unmet": "你尚未符合参与资格——需要至少 10,000 AP 的增益（目前 +{{apGained}}）。",
+		"requirement_pending": "资格检查待处理——请先提交结束数据。",
+		"no_agent": "请先提交数据以生成你的签到二维码。",
+		"qr_loading": "正在生成二维码……",
+		"event_no_active": "目前没有可参与的活动。",
+		"stat_hint": "复制 Ingress 应用中的 ALL TIME 数据后点击提交按钮。数据必须在复制后约 5 分钟内提交。"
 	}
 }

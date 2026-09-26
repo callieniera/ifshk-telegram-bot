@@ -265,6 +265,7 @@ class EventHandlers {
 			const idx = await this.#getRowByAgentName(agentName);
 			const value = { agentName, agentFaction, level, lifetimeAP, subStat, id: user_info.id };
 			const res = idx === -1 ? await this.#buildNewEntry(value) : await this.#updateEntry(idx, value, user_info);
+			if (res) this.#userStatusCache.delete(String(user_info.id));
 			if (res && idx === -1) {
 				this.#userMap.set(user_info.id, { agentName, languageCode: user_info.language_code });
 				this.#instances.events.scheduleSave();
@@ -285,11 +286,12 @@ class EventHandlers {
 			const idx = await this.#getRowByAgentName(agentName);
 			if (idx === -1) return `Agent not found!`;
 			const token = await this.#instances.google.getServiceAccountToken();
-			const [[value]] = await getRange(token, this.#opt.sheetID, `'Data'!A${idx}`);
+			const [[value, _, id]] = await getRange(token, this.#opt.sheetID, `'Data'!A${idx}:C${idx}`);
 			if (value === "TRUE") return true;
 			try {
 				await updateRange(token, this.#opt.sheetID, `'Data'!A${idx}`, [[true]]);
-				return true;
+				this.#userStatusCache.delete(String(id));
+				return Number.isNaN(Number(id)) ? String(id) : Number(id);
 			} catch (err) {
 				console.error(err);
 				return false;
@@ -535,32 +537,51 @@ class EventHandlers {
 		return result;
 	}
 
+	// Build the qr-code-styling options for an event check-in QR. Shared by the
+	// Telegram photo path (getRawData -> Buffer) and the web data-URL path so both
+	// render an identical QR (same dimensions, colors, and deep link).
+	#qrOptions(agentName, agentFaction) {
+		const faction = String(agentFaction || "unknown").toLocaleLowerCase();
+		return {
+			width: 1080,
+			height: 1080,
+			data: `https://t.me/${process.env.TG_BOT_USERNAME}?start=checkin-${this.#opt.eventID}-${agentName}`,
+			dotsOptions: {
+				color: faction.includes("enl") ? "#19c37d" : faction.includes("res") ? "#0b5a7a" : "#ffffff",
+				type: "extra-rounded",
+			},
+			backgroundOptions: {
+				color: "#000000",
+			},
+			imageOptions: {
+				saveAsBlob: true,
+				crossOrigin: "anonymous",
+				margin: 10,
+				imageSize: 0.6,
+			},
+			margin: 54,
+		};
+	}
+
+	// Generate the check-in QR as a self-contained data:image/png;base64 URL for the
+	// web client to render in an <img>. Mirrors sendCheckinQRCode (same options via
+	// #qrOptions) but returns a data URL instead of a Buffer for Telegram.
+	async getCheckinQrDataUrl(agentName, agentFaction) {
+		const qrCodeImage = new QRCodeStyling({
+			jsdom: JSDOM, // this is required
+			nodeCanvas, // this is required,
+			...this.#qrOptions(agentName, agentFaction),
+		});
+		const buffer = await qrCodeImage.getRawData("png");
+		return `data:image/png;base64,${Buffer.from(buffer).toString("base64")}`;
+	}
+
 	async sendCheckinQRCode(user_info, { agentName, agentFaction }, opt) {
 		try {
-			const faction = String(agentFaction || "unknown").toLocaleLowerCase();
-			const options = {
-				width: 1080,
-				height: 1080,
-				data: `https://t.me/${process.env.TG_BOT_USERNAME}?start=checkin-${this.#opt.eventID}-${agentName}`,
-				dotsOptions: {
-					color: faction.includes("enl") ? "#19c37d" : faction.includes("res") ? "#0b5a7a" : "#ffffff",
-					type: "extra-rounded",
-				},
-				backgroundOptions: {
-					color: "#000000",
-				},
-				imageOptions: {
-					saveAsBlob: true,
-					crossOrigin: "anonymous",
-					margin: 10,
-					imageSize: 0.6,
-				},
-				margin: 54,
-			};
 			const qrCodeImage = new QRCodeStyling({
 				jsdom: JSDOM, // this is required
 				nodeCanvas, // this is required,
-				...options,
+				...this.#qrOptions(agentName, agentFaction),
 			});
 			const file = qrCodeImage.getRawData("png");
 			const i18n = this.#instances.i18n;
@@ -595,6 +616,7 @@ class EventHandlers {
 
 	set passcode(value) {
 		this.#passcode = String(value);
+		this.#userStatusCache.clear();
 		this.#instances.events?.scheduleSave();
 		return;
 	}
@@ -693,26 +715,6 @@ class EventHandlers {
 		return recipients;
 	}
 
-	// Return the event passcode for a specific identity (column C), or null if the row
-	// does not exist / does not qualify / the passcode is not set. Used by the HTTP
-	// passcode endpoint for uuid (non-numeric) identities.
-	async getPasscodeById(id) {
-		await this.initSync();
-		if (typeof this.#passcode !== "string" || !this.#passcode.length) return null;
-		if (!this.#opt.sheetID) return null;
-		const target = String(id).trim();
-		if (!target.length) return null;
-		const token = await this.#instances.google.getServiceAccountToken();
-		const rows = await getRange(token, this.#opt.sheetID, "'Data'!A:O");
-		rows.splice(0, 1);
-		for (const row of rows) {
-			if (String(row[2]).trim() !== target) continue;
-			if (!this.#rowQualifiesForPasscode(row)) return null;
-			return this.#passcode;
-		}
-		return null;
-	}
-
 	async #sendPasscode(recipient) {
 		if (typeof this.#passcode !== "string" || !this.#passcode.length) return;
 		const i18n = this.#instances.i18n;
@@ -744,6 +746,7 @@ class EventHandlers {
 
 	async broadcastPasscode() {
 		if (typeof this.#passcode !== "string" || !this.#passcode.length) return;
+		this.#userStatusCache.clear();
 		const recipients = await this.getPasscodeRecipients();
 		for (const recipient of recipients) await this.#sendPasscode(recipient);
 		return;
@@ -766,6 +769,53 @@ class EventHandlers {
 		}
 	}
 
+	#userStatusCache = new Map();
+	async getUserStatus(id) {
+		const none = { agentName: null, agentFaction: null, checkedIn: false, qualifies: false, apGained: null };
+		await this.initSync();
+		if (!this.#opt.sheetID) return none;
+		const target = String(id).trim();
+		if (!target.length) return none;
+		let result;
+		if (this.#userStatusCache.has(target)) result = this.#userStatusCache.get(target);
+		else {
+			const token = await this.#instances.google.getServiceAccountToken();
+			const rows = await getRange(token, this.#opt.sheetID, "'Data'!A:O");
+			rows.splice(0, 1);
+			for (const row of rows) {
+				const rowId = String(row[2]).trim();
+				if (rowId !== target) continue;
+				const checkedIn = row[0] === "TRUE" || row[0] === "true" || row[0] === true;
+				const j = row[9];
+				const k = row[10];
+				const qualifies = this.#rowQualifiesForPasscode(row);
+				const apGained = j === "" || j == null || k === "" || k == null || Number.isNaN(Number(k)) || Number.isNaN(Number(j)) ? null : Number(k) - Number(j);
+				result = {
+					agentName: String(row[4]),
+					agentFaction: String(row[5]),
+					checkedIn,
+					qualifies,
+					apGained,
+				};
+				this.#userStatusCache.set(target, result);
+				break;
+			}
+		}
+		if (result) {
+			if (
+				result.qualifies &&
+				typeof this.#passcode === "string" &&
+				this.#passcode.length &&
+				this.#details.restockEndTime &&
+				Date.now() >= new Date(this.details.restockTime).getTime()
+			)
+				result.passcode = this.#passcode;
+			return result;
+		}
+		return none;
+	}
+
+	// Exports
 	exportSaveData() {
 		const exportValue = {
 			...this.#opt,

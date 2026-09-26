@@ -17,3 +17,5 @@ guids_data.json
 dev/
 
 jsconfig.json
+
+wrangler.jsonc
